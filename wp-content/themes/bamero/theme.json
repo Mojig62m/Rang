@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schemas.wp.org/wp/6.7/theme.json",
+  "version": 3,
+  "settings": {
+    "appearanceTools": true,
+    "layout": { "contentSize": "1200px", "wideSize": "1440px" },
+    "spacing": {
+      "units": ["px", "rem", "%", "vw", "vh"],
+      "spacingSizes": [
+        { "name": "XS", "slug": "xs", "size": "0.25rem" },
+        { "name": "SM", "slug": "sm", "size": "0.5rem" },
+        { "name": "MD", "slug": "md", "size": "1rem" },
+        { "name": "LG", "slug": "lg", "size": "1.5rem" },
+        { "name": "XL", "slug": "xl", "size": "2rem" },
+        { "name": "2XL", "slug": "2xl", "size": "3rem" },
+        { "name": "3XL", "slug": "3xl", "size": "4rem" }
+      ]
+    },
+    "color": {
+      "custom": false,
+      "palette": [
+        { "name": "Ink", "slug": "ink", "color": "#10233f" },
+        { "name": "Brand", "slug": "brand", "color": "#0b5fa5" },
+        { "name": "Accent", "slug": "accent", "color": "#d9a441" },
+        { "name": "Surface", "slug": "surface", "color": "#f7f9fc" },
+        { "name": "White", "slug": "white", "color": "#ffffff" }
+      ]
+    },
+    "typography": {
+      "customFontSize": false,
+      "fluid": true,
+      "fontFamilies": [
+        { "fontFamily": "Vazirmatn, sans-serif", "slug": "brand" }
+      ],
+      "fontSizes": [
+        { "name": "Small", "slug": "sm", "size": "0.875rem" },
+        { "name": "Body", "slug": "md", "size": "1rem" },
+        { "name": "Large", "slug": "lg", "size": "clamp(1.125rem, 1.6vw, 1.375rem)" },
+        { "name": "Display", "slug": "display", "size": "clamp(2rem, 4vw, 4rem)" }
+      ]
+    }
+  },
+  "styles": {
+    "typography": { "fontFamily": "var(--wp--preset--font-family--brand)", "lineHeight": "1.7" },
+    "elements": {
+      "button": { "border": { "radius": "0.625rem" }, "typography": { "fontWeight": "700" } },
+      "link": { "color": { "text": "var(--wp--preset--color--brand)" } }
+    }
+  }
+}
+

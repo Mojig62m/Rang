@@ -1,0 +1,33 @@
+name: Bamero production gate
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  static-production-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, curl, openssl
+          tools: none
+      - name: PHP lint
+        run: find . -type f -name '*.php' -not -path './docs/*' -print0 | xargs -0 -n1 php -l
+      - name: Production gate
+        run: bash tests/production_gate.sh
+      - name: Immutable artifact manifest
+        run: |
+          mkdir -p artifact
+          find . -type f -not -path './.git/*' -print0 | sort -z | xargs -0 sha256sum > artifact/sha256-manifest.txt
+          tar --exclude=.git -czf artifact/bamero-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bamero-source-${{ github.sha }}
+          path: artifact/
+          retention-days: 14

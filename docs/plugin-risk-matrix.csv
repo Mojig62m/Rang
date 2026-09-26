@@ -1,0 +1,10 @@
+plugin,source,purpose,risk_score,high_critical_cve_status,decision,verification_note
+WooCommerce,WordPress.org,commerce,medium,not_scanned_in_sandbox,conditional,run WPScan against locked version
+YITH WooCommerce Wishlist,WordPress.org,wishlist,medium,not_scanned_in_sandbox,conditional,activate only if required
+Autoptimize,WordPress.org,optimization,medium,not_scanned_in_sandbox,conditional,test script compatibility
+WP Super Cache,WordPress.org,page cache,medium,not_scanned_in_sandbox,conditional,prefer host cache and Redis
+Rank Math SEO,WordPress.org,SEO,medium,not_scanned_in_sandbox,conditional,lock version and scan
+Wordfence Security,WordPress.org,security,medium,not_scanned_in_sandbox,conditional,avoid duplicate WAF policies
+Contact Form 7,WordPress.org,forms,medium,not_scanned_in_sandbox,conditional,use only if needed
+bamero-production-core,local,production controls,low,not_applicable,approved,PHP syntax and static tests
+bamero-mobile-auth,local,OTP auth,high,not_applicable,review_required,provider rate limits and SMS budget pending

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" role="img" aria-labelledby="title desc">
+  <title id="title">تصویر محصول در دسترس نیست</title>
+  <desc id="desc">تصویر جایگزین محصولات بامبرو</desc>
+  <rect width="600" height="400" fill="#f1f5f2"/>
+  <path d="M180 280h240l-44-120-44 58-38-48-114 110z" fill="#2e7d32" opacity=".75"/>
+  <circle cx="390" cy="130" r="28" fill="#ff9800"/>
+  <text x="300" y="350" text-anchor="middle" font-family="Tahoma,Arial,sans-serif" font-size="24" fill="#1b5e20">بامبرو</text>
+</svg>

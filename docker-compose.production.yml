@@ -1,0 +1,56 @@
+# Production overlay. Requires a secret-managed .env.production and a TLS reverse proxy.
+# Image variables MUST be immutable digests, e.g. repo@sha256:<digest>.
+services:
+  db:
+    image: ${MARIADB_IMAGE:?Set immutable MARIADB_IMAGE digest}
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:?Set DB_NAME}
+      MARIADB_USER: ${DB_USER:?Set DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h localhost -u root -p$${MARIADB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+  wordpress:
+    image: ${WORDPRESS_IMAGE:?Set immutable WORDPRESS_IMAGE digest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    expose: ["80"]
+    env_file: [.env.production]
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${DB_USER:?Set DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME:?Set DB_NAME}
+    volumes:
+      - wordpress_data:/var/www/html
+      - ./wp-content:/var/www/html/wp-content:ro
+      - ./wp-config.php:/var/www/html/wp-config.php:ro
+      - uploads_data:/var/www/html/wp-content/uploads
+    networks: [frontend, backend]
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit((int)!@file_get_contents(\"http://127.0.0.1/wp-json/bamero/v1/health/live\"));'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+networks:
+  frontend: {}
+  backend:
+    internal: true
+volumes:
+  db_data: {}
+  wordpress_data: {}
+  uploads_data: {}
