@@ -831,7 +831,7 @@ function bamero_output_entity_graph() {
         );
     }
 
-    echo '<script type="application/ld+json">' . wp_json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+    echo '<script type="application/ld+json" nonce="' . esc_attr( function_exists( 'bamero_csp_nonce' ) ? bamero_csp_nonce() : '' ) . '">' . wp_json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
 }
 add_action('wp_head', 'bamero_output_entity_graph', 5);
 
@@ -900,15 +900,22 @@ add_filter('wp_iframe_tag_add_loading_attr', function () {
 
 /**
  * CSP nonce (SEC-06). Generated once per request.
+ *
+ * Guarded with function_exists() because the canonical definition lives in the
+ * bamero-production-core plugin, which WordPress loads BEFORE the theme. Without
+ * this guard PHP aborts with a fatal "Cannot redeclare" error (see audit report).
  */
-function bamero_csp_nonce() {
-    static $nonce = null;
-    if ($nonce === null) {
-        $nonce = base64_encode(random_bytes(16));
+if ( ! function_exists( 'bamero_csp_nonce' ) ) {
+    function bamero_csp_nonce() {
+        static $nonce = null;
+        if ($nonce === null) {
+            $nonce = base64_encode(random_bytes(16));
+        }
+        return $nonce;
     }
-    return $nonce;
 }
 
+if ( ! function_exists( 'bamero_security_headers' ) ) {
 function bamero_security_headers() {
     if (headers_sent() || is_admin()) {
         return;
@@ -933,6 +940,7 @@ function bamero_security_headers() {
         . "form-action 'self'";
     header('Content-Security-Policy: ' . $csp);
 }
+} // end if ( ! function_exists( 'bamero_security_headers' ) )
 add_action('send_headers', 'bamero_security_headers');
 
 function bamero_script_loader_nonce($tag, $handle, $src) {

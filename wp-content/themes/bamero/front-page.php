@@ -13,7 +13,7 @@ $categories = function_exists('get_terms') ? get_terms(array('taxonomy'=>'produc
 if (is_wp_error($categories)) $categories = array();
 $schema = array('@context'=>'https://schema.org','@type'=>'Organization','name'=>get_bloginfo('name') ?: 'بامرو','url'=>home_url('/'),'telephone'=>'+989134292329','areaServed'=>'IR');
 ?>
-<script type="application/ld+json"><?php echo wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
+<script type="application/ld+json" nonce="<?php echo esc_attr(function_exists('bamero_csp_nonce') ? bamero_csp_nonce() : ''); ?>"><?php echo wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?></script>
 <main id="main-content" class="bamero-home" tabindex="-1">
     <section class="bamero-hero container" aria-labelledby="bamero-hero-title">
         <div class="bamero-hero-copy">
