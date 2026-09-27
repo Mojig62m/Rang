@@ -11,6 +11,10 @@ RewriteRule ^xmlrpc\.php$ - [F,L]
 # Block direct access to sensitive disclosure files
 RewriteRule ^(wp-config\.php|readme\.html)$ - [F,L]
 
+# Block documentation and markdown sources (defense-in-depth; also excluded from deploy)
+RewriteRule ^docs/ - [F,L]
+RewriteRule \.(md|markdown|rst)$ - [F,L]
+
 # HTTPS force (when behind non-TLS terminator adjust as needed)
 RewriteCond %{HTTPS} off
 RewriteCond %{HTTP:X-Forwarded-Proto} !https
@@ -33,6 +37,10 @@ RewriteRule . /index.php [L]
 </FilesMatch>
 
 <FilesMatch "\.(sql|bak|env|log)$">
+  Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(md|markdown|rst|sh|lock|yml|yaml)$">
   Require all denied
 </FilesMatch>
 

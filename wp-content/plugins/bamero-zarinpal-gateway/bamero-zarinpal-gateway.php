@@ -216,18 +216,16 @@ function bamero_zarinpal_bootstrap() {
                 exit;
             }
 
-            if ('OK' !== $status) {
-                $order->update_status('failed', 'بازگشت ناموفق از زرین‌پال.');
-                $this->log('zarinpal_callback_not_ok', array('order_id' => $order->get_id()));
-                wp_safe_redirect(wc_get_checkout_url());
-                exit;
-            }
-
-            // Idempotency: never re-verify or re-complete a paid order.
+            // Idempotency first: a paid order is terminal. Never let a forged or
+            // replayed callback downgrade an already-paid order.
             if ($order->is_paid()) {
                 wp_safe_redirect($this->get_return_url($order));
                 exit;
             }
+
+            // Do NOT trust the client-supplied Status/redirect parameter. The only
+            // authority for the payment outcome is the server-side verify call below.
+            $this->log('zarinpal_callback_received', array('order_id' => $order->get_id(), 'reported_status' => $status));
 
             $amount = (int) round((float) $order->get_total());
 
