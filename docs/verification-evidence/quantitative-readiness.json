@@ -1,0 +1,28 @@
+{
+  "method": "binomial/Wilson lower bound, Bonferroni family-wise confidence, nearest-rank p75",
+  "assumptions": {
+    "target_reliability": 0.999,
+    "overall_confidence": 0.95,
+    "critical_gate_count": 7,
+    "independence": "not assumed for approval; correlated failures require conservative interpretation",
+    "runtime_data": "No runtime evidence CSV supplied; runtime SLOs are not claimed."
+  },
+  "equations": {
+    "sli": "good_events / total_events",
+    "error_budget": "1 - SLO",
+    "zero_failure_n": "ceil(log(1-confidence) / log(target_reliability))",
+    "wilson_lower": "(p+z^2/(2n)-z*sqrt(p(1-p)/n+z^2/(4n^2)))/(1+z^2/n)",
+    "cwv": "nearest_rank(values, 0.75)"
+  },
+  "calculated_requirements": {
+    "zero_failure_trials_at_95pct_for_99_9pct_reliability": 2995,
+    "zero_failure_trials_per_gate_with_95pct_family_confidence_across_7_gates": 4940,
+    "availability_error_budget_per_1m_events_at_99_9pct": 1000
+  },
+  "static_evidence": {
+    "production_gate_exit_zero": true,
+    "php_file_count": 22,
+    "css_file_count": 7
+  },
+  "runtime_evidence": []
+}

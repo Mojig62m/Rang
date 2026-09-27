@@ -11,7 +11,7 @@
       "area": "code",
       "title": "PHP lint",
       "status": "PASS",
-      "evidence": "21 PHP files",
+      "evidence": "22 PHP files",
       "required_action": "Keep in CI"
     },
     {
