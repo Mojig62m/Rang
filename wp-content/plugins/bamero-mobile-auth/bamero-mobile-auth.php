@@ -12,11 +12,11 @@
 defined('ABSPATH') || exit;
 
 define('BAMERO_MOBILE_AUTH_VERSION', '1.0.0');
-define('BAMERO_MOBILE_AUTH_OTP_TTL', 120);      // 5 minutes
+define('BAMERO_MOBILE_AUTH_OTP_TTL', 120);      // OTP validity window: 2 minutes
 define('BAMERO_MOBILE_AUTH_OTP_LENGTH', 6);
-define('BAMERO_MOBILE_AUTH_RATE_LIMIT', 5);
-define('BAMERO_MOBILE_AUTH_MAX_ATTEMPTS', 3);
-define('BAMERO_MOBILE_AUTH_LOCKOUT', 900);     // max OTP requests per phone per hour
+define('BAMERO_MOBILE_AUTH_RATE_LIMIT', 5);     // max OTP requests per phone per hour
+define('BAMERO_MOBILE_AUTH_MAX_ATTEMPTS', 3);   // max verification attempts per OTP
+define('BAMERO_MOBILE_AUTH_LOCKOUT', 900);      // 15-minute lockout after repeated failed verifications
 define('BAMERO_MOBILE_AUTH_META_PHONE', 'bamero_verified_mobile');
 
 /**
@@ -265,8 +265,14 @@ function bamero_handle_request_otp() {
     $result  = bamero_request_otp($phone, $context);
     $redirect = wp_get_referer() ? wp_get_referer() : home_url('/');
     if (is_wp_error($result)) {
+        if (function_exists('bamero_log_event')) {
+            bamero_log_event('otp_request_failed', array('context' => $context, 'reason' => $result->get_error_code()));
+        }
         wp_safe_redirect(add_query_arg('bamero_auth', $result->get_error_code(), $redirect));
         exit;
+    }
+    if (function_exists('bamero_log_event')) {
+        bamero_log_event('otp_requested', array('context' => $context));
     }
     wp_safe_redirect(add_query_arg(array(
         'bamero_auth' => 'otp_sent',
@@ -297,6 +303,14 @@ function bamero_handle_verify_otp() {
     $redirect = wp_get_referer() ? wp_get_referer() : home_url('/');
 
     if (is_wp_error($verified)) {
+        if (function_exists('bamero_log_event')) {
+            bamero_log_event('otp_verify_failed', array('context' => $context, 'reason' => $verified->get_error_code()));
+        }
+        // Throttle: emit HTTP 429 for lockout after too many failed attempts.
+        if ('locked' === $verified->get_error_code()) {
+            nocache_headers();
+            wp_die(esc_html($verified->get_error_message()), '', array('response' => 429));
+        }
         wp_safe_redirect(add_query_arg('bamero_auth', $verified->get_error_code(), $redirect));
         exit;
     }
@@ -322,6 +336,9 @@ function bamero_handle_verify_otp() {
             exit;
         }
         bamero_login_user($user_id);
+        if (function_exists('bamero_log_event')) {
+            bamero_log_event('customer_registered', array('user_id' => (int) $user_id));
+        }
         wp_safe_redirect(add_query_arg('bamero_auth', 'registered', wc_get_page_permalink('myaccount') ?: home_url('/')));
         exit;
     }
@@ -332,6 +349,9 @@ function bamero_handle_verify_otp() {
         exit;
     }
     bamero_login_user($user->ID);
+    if (function_exists('bamero_log_event')) {
+        bamero_log_event('customer_logged_in', array('user_id' => (int) $user->ID));
+    }
     wp_safe_redirect(add_query_arg('bamero_auth', 'logged_in', wc_get_page_permalink('myaccount') ?: home_url('/')));
     exit;
 }

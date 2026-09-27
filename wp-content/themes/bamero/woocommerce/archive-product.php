@@ -67,24 +67,8 @@ if (taxonomy_exists('product_cat')) {
                         <?php endforeach; ?>
                     </ul>
                 <?php else : ?>
-                    <ul class="category-list">
-                        <?php
-                        $fallback_cats = array('رنگ ساختمان', 'رنگ صنعتی', 'ضد آب', 'چسب و بتونه', 'ابزار نقاشی', 'رنگ خودرو');
-                        foreach ($fallback_cats as $name) :
-                            ?>
-                            <li><a href="#"><span><?php echo esc_html($name); ?></span><span class="count">۰</span></a></li>
-                        <?php endforeach; ?>
-                    </ul>
+                    <p class="category-empty"><?php echo esc_html__('هنوز دسته‌بندی محصولی ایجاد نشده است.', 'bamero'); ?></p>
                 <?php endif; ?>
-            </div>
-
-            <div class="sidebar-block" style="margin-top:24px">
-                <h2 class="sidebar-title"><?php echo esc_html__('حجم بسته', 'bamero'); ?></h2>
-                <div class="filter-chips" role="group" aria-label="<?php echo esc_attr__('فیلتر حجم', 'bamero'); ?>">
-                    <?php foreach (array('۱ لیتر', '۴ لیتر', '۱۰ لیتر', '۲۰ لیتر') as $chip) : ?>
-                        <button type="button" class="chip"><?php echo esc_html($chip); ?></button>
-                    <?php endforeach; ?>
-                </div>
             </div>
 
             <div class="sidebar-block quote-list-block">

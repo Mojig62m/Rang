@@ -22,9 +22,14 @@ function bamero_request_id() {
 }
 
 function bamero_log_event($event, array $context = array()) {
+    $redact = array(
+        'phone', 'mobile', 'email', 'order_total', 'authorization', 'signature',
+        'otp', 'code', 'token', 'password', 'secret', 'ref_id', 'authority',
+        'national_id', 'card', 'cvv', 'iban', 'api_key', 'merchant_id',
+    );
     $safe = array('event' => sanitize_key($event), 'timestamp' => gmdate('c'), 'request_id' => bamero_request_id(), 'correlation_id' => wp_generate_uuid4());
     foreach ($context as $key => $value) {
-        if (in_array($key, array('phone', 'email', 'order_total', 'authorization', 'signature'), true)) {
+        if (in_array($key, $redact, true)) {
             continue;
         }
         $safe[sanitize_key($key)] = is_scalar($value) ? sanitize_text_field((string) $value) : '[redacted]';
@@ -225,6 +230,56 @@ function bamero_observe_order($order_id) {
     bamero_log_event('order_status_changed', array('order_id' => $order_id, 'status' => $order->get_status(), 'currency' => $order->get_currency()));
 }
 add_action('woocommerce_order_status_changed', 'bamero_observe_order');
+
+/**
+ * Session hardening: idle + absolute timeouts.
+ * Admins get short windows; customers keep persistent login but with a safety net.
+ */
+function bamero_session_limits($user_id) {
+    if (user_can($user_id, 'manage_options')) {
+        return array('idle' => 2 * HOUR_IN_SECONDS, 'absolute' => 12 * HOUR_IN_SECONDS);
+    }
+    return array(
+        'idle'     => (int) apply_filters('bamero_session_idle_timeout', 14 * DAY_IN_SECONDS),
+        'absolute' => (int) apply_filters('bamero_session_absolute_timeout', 90 * DAY_IN_SECONDS),
+    );
+}
+
+function bamero_mark_session_start($user_login, $user = null) {
+    if ($user instanceof WP_User) {
+        update_user_meta($user->ID, 'bamero_session_start', time());
+        update_user_meta($user->ID, 'bamero_last_activity', time());
+    }
+}
+add_action('wp_login', 'bamero_mark_session_start', 10, 2);
+
+function bamero_enforce_session_timeout() {
+    if (!is_user_logged_in() || is_admin()) return;
+    if ((defined('DOING_AJAX') && DOING_AJAX) || (defined('DOING_CRON') && DOING_CRON) || (defined('REST_REQUEST') && REST_REQUEST)) return;
+    if (function_exists('wp_doing_ajax') && wp_doing_ajax()) return;
+
+    $user_id = get_current_user_id();
+    $now     = time();
+    $limits  = bamero_session_limits($user_id);
+    $start   = (int) get_user_meta($user_id, 'bamero_session_start', true);
+    $last    = (int) get_user_meta($user_id, 'bamero_last_activity', true);
+
+    if (!$start) {
+        update_user_meta($user_id, 'bamero_session_start', $now);
+        $start = $now;
+    }
+
+    if (($last && ($now - $last) > $limits['idle']) || ($now - $start) > $limits['absolute']) {
+        bamero_log_event('session_expired', array('user_id' => (int) $user_id, 'reason' => 'timeout'));
+        wp_logout();
+        update_user_meta($user_id, 'bamero_session_start', $now);
+        wp_safe_redirect(add_query_arg('bamero_auth', 'session_expired', home_url('/')));
+        exit;
+    }
+
+    update_user_meta($user_id, 'bamero_last_activity', $now);
+}
+add_action('init', 'bamero_enforce_session_timeout', 20);
 
 function bamero_admin_health_notice() {
     if (!current_user_can('manage_options')) return;

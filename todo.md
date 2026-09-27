@@ -1,33 +1,57 @@
-# Bamero (Rang) — Production Hardening & Go-Live Task Plan
+# BAMERO-REFINE-HOSTING-READY — Execution Plan
 
-## 0. Environment & Baseline
-- [x] Install PHP 8.3 CLI for real syntax lint
-- [x] Run full production gate to capture true baseline
-- [x] Research official Zarinpal v4 + SMS.ir REST docs (authoritative)
+## DISCOVER
+- [x] Detect versions (WP/Woo/PHP/DB/plugins/gateway/theme)
+- [x] Map dev/test artifacts (Docker/K8s/CI-CD/Vagrant/local configs/test data)
+- [x] Produce Version Manifest + Artifact Inventory + Compatibility Matrix
+- [x] BLOCK check: critical incompatibility? (none)
 
-## 1. Remove Dirty / Dead / Mock / Sample / Obsolete Code
-- [x] Remove legacy `setup-bamero.sh` (placeholder config, fake email/phone, auto git push, random CDN font)
-- [x] Clean `.env.example` (duplicate + unused generic SMS_* vars)
-- [x] Update `setup-env.sh` to emit SMS.ir + Zarinpal env (remove dead `bamero_send_sms` reference)
-- [x] Remove dead `bamero_send_sms()` + unused `bamero_otp_rate_key()`; fix OTP TTL comment
-- [x] Remove `bamero_create_test_users()` sample users (fake emails) + update seed gate
-- [x] Remove no-op `bamero_resource_hints`; fix footer placeholder email/phone
-- [x] Fix readiness check wrong filter (`bamero_sms_provider` -> `bamero_sms_provider_send`)
+## SANITIZE
+- [x] Remove Docker*/K8s*/Vagrant*/.env.local/docker-compose*/test-only Makefile
+- [x] Remove CI/CD configs not needed for hosting deploy
+- [x] Remove test fixtures/seed scripts/debug plugins/dev-only themes/phpunit.xml/jest.config*
+- [x] Clean wp-config.php (remove local overrides/test constants) + .htaccess
+- [x] Verify no secrets/tokens/credentials in codebase/configs/logs
+- [x] Filesystem diff report (before/after)
 
-## 2. Phone-only Auth Requirements
-- [x] Registration = first name + last name + phone only (no password, no email)
-- [x] Disable WooCommerce lost-password / password reset entirely
-- [x] Ensure no customer email is ever required/sent
-- [x] Persistent login (no repeated re-login) with long-lived cookie
+## ENV_ALIGN
+- [x] Runtime vs detected versions; HTTPS; PHP limits
+- [x] DB charset/collation/privileges vs detected DB version
+- [x] HPOS: check Woo docs for detected version before toggle
+- [x] Deploy method: SSH/rsync/SFTP only; secrets via env/panel
 
-## 3. Zarinpal Gateway (per official docs)
-- [x] Harden request/verify/callback, amount unit, currency, idempotency, error handling
-- [x] WC settings-backed config + env fallback
+## AUTH_REFINE
+- [x] Audit existing auth; CSPRNG/single-use/short-TTL/max-attempts/429
+- [x] Resend-invalidate-prev, const-time-compare, session rotation, idle+abs timeout
+- [x] Remove legacy auth only after new verified
 
-## 4. Verification
-- [x] PHP lint all files
-- [x] Run production gate + all static gates (green)
-- [x] Produce final Go-Live readiness report with evidence
+## COMMERCE_AUDIT
+- [x] Server-side validation logic patched per detected Woo version
+- [x] Gateway audited vs official docs; Amount==Total, Status==Unpaid, sig, RefID post-verify
+- [x] Reject replay/dup-callback/mismatch/client-trust/redirect-params
+- [x] Patch AuthZ/IDOR; Paid=VerifiedOnly; dedup side effects
 
-## 5. Delivery
-- [x] Commit to branch + push + open PR
+## UI_CLEANUP
+- [x] Map demo→real; strip mocks/placeholders/broken links
+- [x] Verify real products/prices/stock/cart/checkout/account flow
+- [x] 320–1440px fluid; resolve overflow; mobile-safe checkout
+
+## SEO_FIX
+- [x] Canonical/robots/sitemap/semantic HTML/breadcrumbs
+- [x] Product/Offer schema from real data; remove thin/stuffed/doorway pages
+
+## SECURITY_HARDEN
+- [x] Validate/sanitize/escape/CSRF/secure-cookie/prepared-stmts
+- [x] Scrub secrets/OTP/tokens/PII from logs/code/frontend
+- [x] Security-event logging only; structured; hosting-compatible path
+
+## PERF_OPTIMIZE
+- [x] CWV measure→fix LCP/INP/CLS
+- [x] Optimize assets; mobile-verify; CDN/cache compatible
+
+## RECOVERY_PROOF
+- [x] Snapshot before sanitize and before each refine phase
+- [x] ≥1 verified restore on target hosting environment
+
+## GATES
+- [x] Produce GATE table + FINAL verdict

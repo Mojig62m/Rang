@@ -918,10 +918,13 @@ function bamero_security_headers() {
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
     $n = bamero_csp_nonce();
-    // CSP-L3 style: no unsafe-inline; scripts need nonce
+    // CSP-L3 style: no unsafe-inline for scripts; scripts need nonce.
+    // style-src-attr allows the few dynamic inline style attributes (color swatches)
+    // without opening up <style>/<link> to unsafe-inline.
     $csp = "default-src 'self'; "
         . "script-src 'self' 'nonce-{$n}'; "
         . "style-src 'self'; "
+        . "style-src-attr 'unsafe-inline'; "
         . "font-src 'self'; "
         . "img-src 'self' data: https:; "
         . "connect-src 'self'; "
@@ -943,6 +946,18 @@ function bamero_script_loader_nonce($tag, $handle, $src) {
     return $tag;
 }
 add_filter('script_loader_tag', 'bamero_script_loader_nonce', 20, 3);
+
+/** Add CSP nonce to WordPress-generated inline scripts (WP 6.4+). */
+function bamero_inline_script_nonce($attributes) {
+    if (is_admin()) {
+        return $attributes;
+    }
+    if (empty($attributes['nonce'])) {
+        $attributes['nonce'] = bamero_csp_nonce();
+    }
+    return $attributes;
+}
+add_filter('wp_inline_script_attributes', 'bamero_inline_script_nonce');
 
 /** Disable author enumeration */
 function bamero_disable_author_enum($redirect, $request) {

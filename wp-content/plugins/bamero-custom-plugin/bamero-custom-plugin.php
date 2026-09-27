@@ -23,8 +23,14 @@ function bamero_custom_plugin_create_pages() {
             'content' => '[bamero_color_consultation]',
         ),
         'about'        => array(
-            'title'   => 'درباره ما',
-            'content' => '<p>بامرو با سال‌ها تجربه در زمینه فروش رنگ و محصولات ساختمانی، آماده ارائه بهترین خدمات به شما مشتریان عزیز است.</p>',
+            'title'    => 'درباره ما',
+            'content'  => '<p>بامرو با سال‌ها تجربه در زمینه فروش رنگ و محصولات ساختمانی، آماده ارائه بهترین خدمات به شما مشتریان عزیز است.</p>',
+            'template' => 'about.php',
+        ),
+        'contact'      => array(
+            'title'    => 'تماس با ما',
+            'content'  => '',
+            'template' => 'contact.php',
         ),
     );
 
@@ -33,13 +39,17 @@ function bamero_custom_plugin_create_pages() {
             continue;
         }
 
-        wp_insert_post(array(
+        $page_id = wp_insert_post(array(
             'post_title'   => $page['title'],
             'post_content' => $page['content'],
             'post_name'    => $slug,
             'post_type'    => 'page',
             'post_status'  => 'publish',
         ));
+
+        if ($page_id && !is_wp_error($page_id) && !empty($page['template'])) {
+            update_post_meta($page_id, '_wp_page_template', $page['template']);
+        }
     }
 }
 
