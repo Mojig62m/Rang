@@ -30,4 +30,4 @@
 - [x] Produce final Go-Live readiness report with evidence
 
 ## 5. Delivery
-- [ ] Commit to branch + push + open PR
+- [x] Commit to branch + push + open PR
