@@ -94,9 +94,10 @@ function bamero_security_headers() {
     if (headers_sent()) return;
     header('X-Request-ID: ' . bamero_request_id());
     header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-    header('Content-Security-Policy: default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-ancestors \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;');
+    header('Content-Security-Policy: default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-ancestors \'self\'; form-action \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;');
 }
 add_action('send_headers', 'bamero_security_headers', 1);
 function bamero_checkout_idempotency($order, $posted) {
