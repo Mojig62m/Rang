@@ -20,38 +20,55 @@ Google Business Profile: **not** created/claimed/modified (out of scope).
 | Identity = verified mobile | `bamero-mobile-auth` plugin, meta `bamero_verified_mobile` |
 | Register = mobile + OTP + first + last name | `bamero_register_customer()` |
 | Auth = mobile + OTP | No password login path for customers |
-| No customer email auth/recovery | WC registration disabled; billing email optional/empty |
-| Session | Standard WP auth cookies (`wp_set_auth_cookie`) |
+| No password / no recovery | `allow_password_reset` disabled; lost-password endpoint + wp-login reset actions blocked |
+| No customer email auth/recovery | WC registration disabled; billing email optional/empty; internal non-routable mailbox only |
+| Persistent login | `wp_set_auth_cookie($id, true, is_ssl())` + 90-day `auth_cookie_expiration` for remembered sessions |
+| Storefront login form | Theme override `woocommerce/myaccount/form-login.php` renders the OTP shortcode (no email/password form) |
 
-SMS delivery is wired via filter `bamero_send_sms`. **Without an owner-provided SMS gateway, OTP send returns a clear WP_Error** — not simulated success.
+## SMS delivery (SMS.ir, asynchronous outbox)
+
+OTP and order notifications are queued into `wp_bamero_notification_outbox` (AES-256-GCM
+sealed payloads, idempotency keys, retry/backoff, lock lease) and delivered by the
+`bamero_notification_worker` cron through the native SMS.ir adapter
+(`bamero_sms_ir_provider_send`) using `POST /v1/send/verify`, header `X-API-KEY`,
+`templateId` and `parameters`. The request thread never calls the provider directly.
+
+If `SMS_PROVIDER`, `SMS_IR_API_KEY` or a template id is missing, the adapter fails closed
+with a `WP_Error` and the readiness endpoint reports `not_ready` — no simulated success.
+
+## Payment (Zarinpal v4)
+
+`bamero-zarinpal-gateway` implements the official v4 flow: `payment/request.json` →
+`StartPay/{authority}` → callback (`Authority`, `Status`) → `payment/verify.json`.
+Codes `100` (verified) and `101` (already verified) complete the order idempotently.
+Configuration is WooCommerce-settings backed with `ZARINPAL_*` environment fallback;
+amount and currency follow the order currency (IRT/IRR). HPOS compatibility is declared.
 
 ## Static verification performed
 
-- `php -l` on `functions.php` and `bamero-mobile-auth.php`: no syntax errors
+- `php -l` on every PHP file: no syntax errors
+- `tests/production_gate.sh`: **PASS** (code-level gates only)
+- `tests/static_checks.sh`, `tests/email_free_static_checks.sh`, `tests/ui_ux_static_checks.sh`, `tests/seed-count-check.sh`: PASS
 - NAP + coordinates present in schema LocalBusiness
 - Header phone = 09134292329; customer-facing header email removed
 - Footer/contact address = Isfahan street stated above
-- Catalog seeder remains idempotent (real WC products on plugin activation)
+- Catalog seeder remains idempotent (real WC products on plugin activation); no synthetic users
 
 ## External prerequisites (owner-controlled — not simulated)
 
 1. DNS + HTTPS for `rang.chasb.bamero.ir`
-2. WordPress salts in `wp-config.php` (replace placeholders)
-3. Database credentials
-4. SMS provider credentials + `add_filter('bamero_send_sms', ...)`
-5. WooCommerce + theme Bamero + plugins: mobile-auth, woocommerce-setup
-6. SMTP only if admin-side mail needed (not customer transactional identity)
-7. Payment gateway (e.g. Zarinpal) configuration
+2. WordPress salts + DB credentials in the environment (never committed)
+3. SMS.ir API key + template ids (`SMS_IR_*`)
+4. Zarinpal merchant id (`ZARINPAL_MERCHANT_ID`)
+5. WooCommerce + theme Bamero + plugins: production-core, mobile-auth, zarinpal-gateway, woocommerce-setup
+6. Object cache / cron runner for the notification worker
 
 ## Deploy steps (owner)
 
-1. Upload codebase
-2. Configure `wp-config` DB + salts
-3. Install WordPress core if needed; set site URL to https://rang.chasb.bamero.ir
-4. Activate WooCommerce → Bamero theme → Bamero WooCommerce Setup → Bamero Mobile Auth
-5. Wire SMS filter
-6. Add `[bamero_mobile_auth]` to My Account or use `/mobile-login/`
-7. Flush permalinks; enable object/page cache at host
+1. `bash setup-env.sh` then fill `DOMAIN`, `WP_ADMIN_PASSWORD`, `SMS_IR_*`, `ZARINPAL_*`
+2. `bash setup-bamero.sh` (validates env, starts the stack, installs core, activates components, provisions catalog)
+3. Flush permalinks; enable object/page cache at host
+4. Run the staging acceptance matrix in `docs/PRODUCTION_READINESS_FINAL_2026_FA.md`
 
 ## Out of scope
 

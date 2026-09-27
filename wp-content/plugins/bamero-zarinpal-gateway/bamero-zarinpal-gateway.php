@@ -1,13 +1,25 @@
 <?php
 /**
  * Plugin Name: Bamero Zarinpal Gateway
- * Description: Minimal, environment-configured WooCommerce gateway for Zarinpal request/verify flow.
- * Version: 1.0.0
+ * Description: Production WooCommerce gateway for the official Zarinpal v4 request/verify flow. Configuration is WooCommerce-settings backed with environment fallback; no credential is ever stored in code or the database.
+ * Version: 1.1.0
  * Author: Bamero
  * License: MIT
  * Text Domain: bamero-zarinpal-gateway
+ * Requires Plugins: woocommerce
  */
 defined('ABSPATH') || exit;
+
+define('BAMERO_ZARINPAL_VERSION', '1.1.0');
+
+/**
+ * Declare High-Performance Order Storage (HPOS) compatibility.
+ */
+add_action('before_woocommerce_init', function () {
+    if (class_exists('Automattic\\WooCommerce\\Utilities\\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
 
 add_action('plugins_loaded', 'bamero_zarinpal_bootstrap', 20);
 function bamero_zarinpal_bootstrap() {
@@ -16,95 +28,238 @@ function bamero_zarinpal_bootstrap() {
     }
 
     class Bamero_Zarinpal_Gateway extends WC_Payment_Gateway {
+        /** @var string */
+        public $merchant_id = '';
+        /** @var string */
+        public $api_base = '';
+        /** @var string */
+        public $startpay_base = '';
+        /** @var string */
+        public $currency = 'IRT';
+
         public function __construct() {
-            $this->id = 'bamero_zarinpal';
-            $this->method_title = 'زرین‌پال';
-            $this->method_description = 'درگاه زرین‌پال با secret از محیط اجرا؛ بدون ذخیره credential در دیتابیس.';
-            $this->has_fields = false;
-            $this->supports = array('products');
-            $this->title = 'پرداخت امن زرین‌پال';
-            $this->description = 'پس از ثبت سفارش به درگاه زرین‌پال منتقل می‌شوید.';
-            $this->enabled = (getenv('ZARINPAL_MERCHANT_ID') && getenv('ZARINPAL_API_BASE_URL')) ? 'yes' : 'no';
+            $this->id                 = 'bamero_zarinpal';
+            $this->method_title       = 'زرین‌پال';
+            $this->method_description = 'درگاه رسمی زرین‌پال (v4). پیکربندی از تنظیمات ووکامرس خوانده می‌شود و در صورت نبود، از متغیرهای محیطی استفاده می‌کند؛ هیچ credential در کد یا دیتابیس ذخیره نمی‌شود.';
+            $this->has_fields         = false;
+            $this->supports           = array('products');
+
             $this->init_form_fields();
+            $this->init_settings();
+
+            // Settings-backed configuration with environment fallback.
+            $this->merchant_id   = $this->cfg('merchant_id', 'ZARINPAL_MERCHANT_ID');
+            $this->api_base      = rtrim($this->cfg('api_base_url', 'ZARINPAL_API_BASE_URL', 'https://payment.zarinpal.com/pg/v4'), '/');
+            $this->startpay_base = rtrim($this->cfg('startpay_url', 'ZARINPAL_STARTPAY_URL', 'https://payment.zarinpal.com/pg/StartPay'), '/');
+            $this->currency      = strtoupper($this->cfg('currency', 'ZARINPAL_CURRENCY', 'IRT'));
+
+            $this->title       = $this->get_option('title', 'پرداخت امن زرین‌پال');
+            $this->description = $this->get_option('description', 'پس از ثبت سفارش به درگاه زرین‌پال منتقل می‌شوید.');
+
+            // Fail closed: the gateway is only usable when fully configured.
+            $this->enabled = ($this->is_configured() && 'yes' === $this->get_option('enabled', 'yes')) ? 'yes' : 'no';
+
+            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
             add_action('woocommerce_api_bamero_zarinpal', array($this, 'handle_callback'));
+        }
+
+        /** Read a setting, falling back to an environment variable, then a default. */
+        private function cfg($key, $env, $fallback = '') {
+            $val = $this->get_option($key, '');
+            if ('' === $val || null === $val) {
+                $env_val = getenv($env);
+                $val = (false === $env_val) ? '' : $env_val;
+            }
+            return ('' === $val || null === $val) ? $fallback : $val;
+        }
+
+        private function is_configured() {
+            return '' !== $this->merchant_id && '' !== $this->api_base && '' !== $this->startpay_base;
         }
 
         public function init_form_fields() {
             $this->form_fields = array(
-                'enabled' => array('title' => 'فعال‌سازی', 'type' => 'checkbox', 'label' => 'استفاده از تنظیمات محیط اجرا', 'default' => 'no'),
+                'enabled' => array(
+                    'title'   => 'فعال‌سازی',
+                    'type'    => 'checkbox',
+                    'label'   => 'فعال کردن درگاه زرین‌پال',
+                    'default' => getenv('ZARINPAL_MERCHANT_ID') ? 'yes' : 'no',
+                ),
+                'title' => array(
+                    'title'       => 'عنوان',
+                    'type'        => 'text',
+                    'description' => 'عنوان نمایش‌داده‌شده در صفحه پرداخت.',
+                    'default'     => 'پرداخت امن زرین‌پال',
+                    'desc_tip'    => true,
+                ),
+                'description' => array(
+                    'title'   => 'توضیحات',
+                    'type'    => 'textarea',
+                    'default' => 'پس از ثبت سفارش به درگاه زرین‌پال منتقل می‌شوید.',
+                ),
+                'merchant_id' => array(
+                    'title'       => 'Merchant ID',
+                    'type'        => 'text',
+                    'description' => 'شناسه ۳۶ کاراکتری پذیرنده زرین‌پال. در صورت خالی بودن از متغیر محیطی ZARINPAL_MERCHANT_ID خوانده می‌شود.',
+                    'default'     => '',
+                    'desc_tip'    => true,
+                ),
+                'currency' => array(
+                    'title'   => 'واحد پول',
+                    'type'    => 'select',
+                    'options' => array('IRT' => 'تومان (IRT)', 'IRR' => 'ریال (IRR)'),
+                    'default' => getenv('ZARINPAL_CURRENCY') ?: 'IRT',
+                ),
+                'api_base_url' => array(
+                    'title'       => 'آدرس API',
+                    'type'        => 'text',
+                    'description' => 'پیش‌فرض رسمی: https://payment.zarinpal.com/pg/v4 (سندباکس: https://sandbox.zarinpal.com/pg/v4).',
+                    'default'     => getenv('ZARINPAL_API_BASE_URL') ?: 'https://payment.zarinpal.com/pg/v4',
+                    'desc_tip'    => true,
+                ),
+                'startpay_url' => array(
+                    'title'       => 'آدرس StartPay',
+                    'type'        => 'text',
+                    'description' => 'پیش‌فرض رسمی: https://payment.zarinpal.com/pg/StartPay',
+                    'default'     => getenv('ZARINPAL_STARTPAY_URL') ?: 'https://payment.zarinpal.com/pg/StartPay',
+                    'desc_tip'    => true,
+                ),
             );
+        }
+
+        /** Log through the shared production logger when available. */
+        private function log($event, array $context = array()) {
+            if (function_exists('bamero_log_event')) {
+                bamero_log_event($event, $context);
+            }
         }
 
         public function process_payment($order_id) {
             $order = wc_get_order($order_id);
-            if (!$order) return array('result' => 'failure');
-            $merchant = getenv('ZARINPAL_MERCHANT_ID');
-            $base = rtrim((string) getenv('ZARINPAL_API_BASE_URL'), '/');
-            if (!$merchant || !$base) {
+            if (!$order) {
+                return array('result' => 'failure');
+            }
+            if (!$this->is_configured()) {
                 wc_add_notice('درگاه پرداخت هنوز پیکربندی نشده است.', 'error');
                 return array('result' => 'failure');
             }
+
             $amount = (int) round((float) $order->get_total());
-            $response = wp_remote_post($base . '/payment/request.json', array(
-                'timeout' => 15,
+            if ($amount <= 0) {
+                wc_add_notice('مبلغ سفارش برای پرداخت معتبر نیست.', 'error');
+                return array('result' => 'failure');
+            }
+
+            $currency = strtoupper((string) $order->get_currency());
+            if (!in_array($currency, array('IRR', 'IRT'), true)) {
+                $currency = $this->currency;
+            }
+
+            $callback = add_query_arg('wc-api', 'bamero_zarinpal', home_url('/'));
+
+            $response = wp_remote_post($this->api_base . '/payment/request.json', array(
+                'timeout' => 20,
                 'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json'),
-                'body' => wp_json_encode(array(
-                    'merchant_id' => $merchant,
-                    'amount' => $amount,
-                    'currency' => getenv('ZARINPAL_CURRENCY') ?: 'IRT',
-                    'description' => 'Bamero order #' . $order->get_id(),
-                    'callback_url' => add_query_arg('wc-api', 'bamero_zarinpal', home_url('/')),
-                    'metadata' => array('mobile' => (string) $order->get_billing_phone(), 'order_id' => (string) $order->get_id()),
+                'body'    => wp_json_encode(array(
+                    'merchant_id'  => $this->merchant_id,
+                    'amount'       => $amount,
+                    'currency'     => $currency,
+                    'description'  => 'Bamero order #' . $order->get_id(),
+                    'callback_url' => $callback,
+                    'metadata'     => array(
+                        'mobile'   => (string) $order->get_billing_phone(),
+                        'order_id' => (string) $order->get_id(),
+                    ),
                 )),
             ));
+
             if (is_wp_error($response)) {
+                $this->log('zarinpal_request_transport_error', array('order_id' => $order->get_id()));
                 wc_add_notice('ارتباط با درگاه پرداخت برقرار نشد.', 'error');
                 return array('result' => 'failure');
             }
-            $body = json_decode(wp_remote_retrieve_body($response), true);
-            $authority = isset($body['data']['authority']) ? sanitize_text_field($body['data']['authority']) : '';
-            $code = isset($body['data']['code']) ? (int) $body['data']['code'] : 0;
-            if (100 !== $code || !$authority) {
+
+            $body   = json_decode(wp_remote_retrieve_body($response), true);
+            $code   = isset($body['data']['code']) ? (int) $body['data']['code'] : 0;
+            $authority = isset($body['data']['authority']) ? sanitize_text_field((string) $body['data']['authority']) : '';
+
+            if (100 !== $code || '' === $authority) {
+                $this->log('zarinpal_request_rejected', array('order_id' => $order->get_id(), 'code' => $code));
                 wc_add_notice('درخواست پرداخت رد شد. بعداً دوباره تلاش کنید.', 'error');
                 return array('result' => 'failure');
             }
+
             $order->update_meta_data('_bamero_zarinpal_authority', $authority);
             $order->save();
             $order->update_status('pending', 'در انتظار بازگشت از زرین‌پال.');
-            return array('result' => 'success', 'redirect' => 'https://payment.zarinpal.com/pg/StartPay/' . rawurlencode($authority));
+
+            $this->log('zarinpal_request_ok', array('order_id' => $order->get_id()));
+
+            return array(
+                'result'   => 'success',
+                'redirect' => $this->startpay_base . '/' . rawurlencode($authority),
+            );
         }
 
         public function handle_callback() {
             $authority = isset($_GET['Authority']) ? sanitize_text_field(wp_unslash($_GET['Authority'])) : '';
-            $status = isset($_GET['Status']) ? sanitize_text_field(wp_unslash($_GET['Status'])) : '';
-            $orders = $authority ? wc_get_orders(array('limit' => 1, 'return' => 'objects', 'meta_key' => '_bamero_zarinpal_authority', 'meta_value' => $authority)) : array();
+            $status    = isset($_GET['Status']) ? strtoupper(sanitize_text_field(wp_unslash($_GET['Status']))) : '';
+
+            $orders = $authority
+                ? wc_get_orders(array('limit' => 1, 'return' => 'objects', 'meta_key' => '_bamero_zarinpal_authority', 'meta_value' => $authority))
+                : array();
             $order = !empty($orders) ? $orders[0] : false;
-            if (!$order || 'OK' !== strtoupper($status)) {
-                if ($order) $order->update_status('failed', 'بازگشت ناموفق از زرین‌پال.');
+
+            if (!$order) {
+                $this->log('zarinpal_callback_unknown_authority');
                 wp_safe_redirect(wc_get_checkout_url());
                 exit;
             }
+
+            if ('OK' !== $status) {
+                $order->update_status('failed', 'بازگشت ناموفق از زرین‌پال.');
+                $this->log('zarinpal_callback_not_ok', array('order_id' => $order->get_id()));
+                wp_safe_redirect(wc_get_checkout_url());
+                exit;
+            }
+
+            // Idempotency: never re-verify or re-complete a paid order.
             if ($order->is_paid()) {
                 wp_safe_redirect($this->get_return_url($order));
                 exit;
             }
-            $merchant = getenv('ZARINPAL_MERCHANT_ID');
-            $base = rtrim((string) getenv('ZARINPAL_API_BASE_URL'), '/');
-            $response = wp_remote_post($base . '/payment/verify.json', array(
-                'timeout' => 15,
+
+            $amount = (int) round((float) $order->get_total());
+
+            $response = wp_remote_post($this->api_base . '/payment/verify.json', array(
+                'timeout' => 20,
                 'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json'),
-                'body' => wp_json_encode(array('merchant_id' => $merchant, 'amount' => (int) round((float) $order->get_total()), 'authority' => $authority)),
+                'body'    => wp_json_encode(array(
+                    'merchant_id' => $this->merchant_id,
+                    'amount'      => $amount,
+                    'authority'   => $authority,
+                )),
             ));
+
             $body = is_wp_error($response) ? array() : json_decode(wp_remote_retrieve_body($response), true);
             $code = isset($body['data']['code']) ? (int) $body['data']['code'] : 0;
+
+            // 100 = verified now, 101 = already verified (idempotent success).
             if (100 === $code || 101 === $code) {
                 $ref = isset($body['data']['ref_id']) ? sanitize_text_field((string) $body['data']['ref_id']) : $authority;
-                $order->payment_complete($ref);
+                $order->update_meta_data('_bamero_zarinpal_ref_id', $ref);
+                $order->save();
+                if (!$order->is_paid()) {
+                    $order->payment_complete($ref);
+                }
                 $order->add_order_note('پرداخت زرین‌پال تأیید شد: ' . $ref);
+                $this->log('zarinpal_verify_ok', array('order_id' => $order->get_id(), 'code' => $code));
                 wp_safe_redirect($this->get_return_url($order));
                 exit;
             }
+
             $order->update_status('failed', 'تأیید پرداخت زرین‌پال ناموفق بود.');
+            $this->log('zarinpal_verify_failed', array('order_id' => $order->get_id(), 'code' => $code));
             wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
@@ -115,10 +270,6 @@ function bamero_zarinpal_bootstrap() {
         return $gateways;
     });
 }
-
-add_filter('woocommerce_gateway_title', function ($title, $id) {
-    return 'bamero_zarinpal' === $id ? 'پرداخت امن زرین‌پال' : $title;
-}, 10, 2);
 
 /* Never allow this plugin to become an email transport. */
 add_filter('woocommerce_email_enabled_new_order', '__return_false', 99);

@@ -1,0 +1,172 @@
+=== production_preflight.sh ===
+PASS: PHP CLI available
+PASS: file wp-config.php
+PASS: file wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: file wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php
+PASS: file wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php
+PASS: file wp-content/themes/bamero/theme.json
+PASS: static mode: external credentials intentionally not required
+NOTE: runtime mode must pass in production-like staging before Go-Live.
+EXIT=0
+=== monitoring_checks.sh ===
+150:    register_rest_route('bamero/v1', '/health/live', array(
+PASS: rg -n register_rest_route\('bamero/v1', '/health/live' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+157:    register_rest_route('bamero/v1', '/health/ready', array(
+PASS: rg -n register_rest_route\('bamero/v1', '/health/ready' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+152:        'permission_callback' => '__return_true',
+159:        'permission_callback' => '__return_true',
+PASS: rg -n permission_callback.*__return_true /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+163:            return new WP_REST_Response(array('status' => $ready ? 'ready' : 'not_ready', 'checks' => $checks), $ready ? 200 : 503);
+PASS: rg -n WP_REST_Response.*503|$ready \? 200 : 503 /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+141:        'database' => bamero_health_db_probe(),
+143:        'outbox_table' => $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table,
+144:        'sms_provider_configured' => (bool) has_filter('bamero_sms_provider_send') && $sms_configured,
+145:        'zarinpal_secret' => (bool) getenv('ZARINPAL_MERCHANT_ID'),
+PASS: rg -n database.*bamero_health_db_probe|outbox_table|sms_provider_configured|zarinpal_secret /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+167:add_action('rest_api_init', 'bamero_health_rest_routes');
+PASS: rg -n rest_api_init.*bamero_health_rest_routes|add_action\('rest_api_init' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: monitoring static checks; no runtime claim made
+EXIT=0
+=== no_write_before_schema.sh ===
+PASS: 10 no-write-before-schema assertions; source-order checks only
+EXIT=0
+=== supply_chain_preflight.sh ===
+PASS: test -s /workspace/rang/.github/workflows/production-gate.yml
+PASS: test -s /workspace/rang/docker-compose.production.yml
+5:    image: ${MARIADB_IMAGE:?Set immutable MARIADB_IMAGE digest}
+23:    image: ${WORDPRESS_IMAGE:?Set immutable WORDPRESS_IMAGE digest}
+PASS: rg -n MARIADB_IMAGE:\?Set immutable|WORDPRESS_IMAGE:\?Set immutable /workspace/rang/docker-compose.production.yml
+PASS: not_rg rootlocal|WP_DEBUG_LOG=1|unsafe-eval /workspace/rang/docker-compose.yml /workspace/rang/docker-compose.production.yml /workspace/rang/.env.example /workspace/rang/setup-env.sh /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+94:    header('Content-Security-Policy: default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-ancestors \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;');
+PASS: rg -n script-src|style-src-attr /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: supply-chain production preflight; registry/image scan remains deployment-time
+EXIT=0
+=== email_free_static_checks.sh ===
+PASS: no forbidden email transport symbols in executable PHP
+PASS: security/outbox controls present: /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: security/outbox controls present: /workspace/rang/wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php
+PASS: platform notification blocking hooks present
+EXIT=0
+=== static_checks.sh ===
+PASS: test -f /workspace/rang/wp-content/themes/bamero/woocommerce/archive-product.php
+PASS: test -f /workspace/rang/wp-content/themes/bamero/woocommerce/single-product.php
+PASS: test -f /workspace/rang/wp-content/themes/bamero/css/components-production.css
+PASS: test -f /workspace/rang/wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php
+PASS: test ! -f /workspace/rang/wp-content/themes/bamero/shop.php
+PASS: test ! -f /workspace/rang/wp-content/themes/bamero/woocommerce.php
+PASS: not_rg \$wpdb|SELECT |INSERT |UPDATE |DELETE  /workspace/rang/wp-content/themes/bamero --glob=*.php
+16:    if (!$product instanceof WC_Product) {
+17:        $product = wc_get_product(get_the_ID());
+23:    if (!$product instanceof WC_Product) {
+PASS: rg -n !\$product instanceof WC_Product|wc_get_product /workspace/rang/wp-content/themes/bamero/woocommerce/single-product.php
+/workspace/rang/wp-content/themes/bamero/js/main.js:122:        var cartSelector = window.BAMERO_CART_SELECTOR || '.bamero-mini-cart';
+/workspace/rang/wp-content/themes/bamero/header.php:105:            <a href="<?php echo esc_url(function_exists('wc_get_cart_url') ? wc_get_cart_url() : home_url('/cart/')); ?>" class="mini-cart-link bamero-mini-cart" aria-label="<?php echo esc_attr__('سبد خرید', 'bamero'); ?>">
+/workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php:14:const BAMERO_CART_SELECTOR = '.bamero-mini-cart';
+/workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php:199:    wp_add_inline_script('bamero-script', 'window.BAMERO_CART_SELECTOR=' . wp_json_encode(BAMERO_CART_SELECTOR) . ';', 'before');
+/workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php:207:    <a href="<?php echo esc_url(wc_get_cart_url()); ?>" class="mini-cart-link bamero-mini-cart" aria-label="<?php echo esc_attr__('سبد خرید', 'bamero'); ?>">
+/workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php:211:    $fragments[BAMERO_CART_SELECTOR] = ob_get_clean();
+PASS: rg -n BAMERO_CART_SELECTOR|bamero-mini-cart /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php /workspace/rang/wp-content/themes/bamero/header.php /workspace/rang/wp-content/themes/bamero/js/main.js
+12:RewriteRule ^(wp-config\.php|readme\.html)$ - [F,L]
+25:<FilesMatch "^(wp-config\.php|xmlrpc\.php|readme\.html)$">
+PASS: rg -n readme\\.html /workspace/rang/.htaccess
+179:    $secret = getenv('BAMERO_PAYMENT_WEBHOOK_SECRET');
+181:    $expected = hash_hmac('sha256', $payload, $secret);
+182:    return hash_equals($expected, (string) $signature);
+PASS: rg -n hash_hmac|hash_equals|BAMERO_PAYMENT_WEBHOOK_SECRET /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+132:    $sms_configured = (bool) getenv('SMS_IR_API_KEY') && (bool) getenv('SMS_IR_API_BASE_URL');
+359:    $api_key = (string) getenv('SMS_IR_API_KEY');
+367:    $response = wp_remote_post($base . '/send/verify', array(
+369:        'headers' => array('X-API-KEY' => $api_key, 'Accept' => 'application/json', 'Content-Type' => 'application/json'),
+PASS: rg -n SMS_IR_API_KEY|/send/verify|X-API-KEY /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+160:            $response = wp_remote_post($this->api_base . '/payment/request.json', array(
+205:            $authority = isset($_GET['Authority']) ? sanitize_text_field(wp_unslash($_GET['Authority'])) : '';
+234:            $response = wp_remote_post($this->api_base . '/payment/verify.json', array(
+253:                    $order->payment_complete($ref);
+PASS: rg -n payment/request\.json|payment/verify\.json|payment_complete|Authority /workspace/rang/wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php
+90:    header('X-Request-ID: ' . bamero_request_id());
+111:    if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+118:        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+PASS: rg -n X-Request-ID|DONOTCACHEPAGE|declare_compatibility /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+254:    $cipher = openssl_encrypt(wp_json_encode($payload), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
+266:    $plain = openssl_decrypt($cipher, 'aes-256-gcm', hash('sha256', AUTH_KEY, true), OPENSSL_RAW_DATA, $iv, $tag);
+300:        payload_ciphertext longtext NOT NULL,
+301:        payload_expires_at datetime NULL,
+309:        PRIMARY KEY (id), UNIQUE KEY idem (idempotency_key), KEY status_schedule (status, scheduled_at), KEY order_id (order_id)
+335:        'idempotency_key' => $idem, 'payload_ciphertext' => $sealed, 'payload_expires_at' => $expires,
+389:        if (!empty($row->payload_expires_at) && strtotime($row->payload_expires_at . ' UTC') < time()) {
+393:        $payload = bamero_open_notification_payload($row->payload_ciphertext);
+PASS: rg -n payload_ciphertext|payload_expires_at|aes-256-gcm|UNIQUE KEY idem /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+271:function bamero_notification_schema_validate($template_key, array $payload) {
+276:        return new WP_Error('notification_schema_invalid', 'Notification schema validation failed before database write.');
+319:    $schema = bamero_notification_schema_validate($template_key, $payload);
+PASS: rg -n bamero_notification_schema_validate|Notification schema validation failed /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+3:  container-type: inline-size;
+7:@container bamero-products (max-width: 42rem) {
+15:@container bamero-products (min-width: 64rem) {
+PASS: rg -n @container|container-type /workspace/rang/wp-content/themes/bamero/css/components-production.css
+PASS: 10 no-write-before-schema assertions; source-order checks only
+PASS: bash /workspace/rang/tests/no_write_before_schema.sh
+150:    register_rest_route('bamero/v1', '/health/live', array(
+PASS: rg -n register_rest_route\('bamero/v1', '/health/live' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+157:    register_rest_route('bamero/v1', '/health/ready', array(
+PASS: rg -n register_rest_route\('bamero/v1', '/health/ready' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+152:        'permission_callback' => '__return_true',
+159:        'permission_callback' => '__return_true',
+PASS: rg -n permission_callback.*__return_true /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+163:            return new WP_REST_Response(array('status' => $ready ? 'ready' : 'not_ready', 'checks' => $checks), $ready ? 200 : 503);
+PASS: rg -n WP_REST_Response.*503|$ready \? 200 : 503 /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+141:        'database' => bamero_health_db_probe(),
+143:        'outbox_table' => $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table,
+144:        'sms_provider_configured' => (bool) has_filter('bamero_sms_provider_send') && $sms_configured,
+145:        'zarinpal_secret' => (bool) getenv('ZARINPAL_MERCHANT_ID'),
+PASS: rg -n database.*bamero_health_db_probe|outbox_table|sms_provider_configured|zarinpal_secret /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+167:add_action('rest_api_init', 'bamero_health_rest_routes');
+PASS: rg -n rest_api_init.*bamero_health_rest_routes|add_action\('rest_api_init' /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: monitoring static checks; no runtime claim made
+PASS: bash /workspace/rang/tests/monitoring_checks.sh
+PASS: test -x /workspace/rang/tests/monitor_runtime.sh
+PASS: test -s /workspace/rang/.github/workflows/production-gate.yml
+PASS: test -s /workspace/rang/docker-compose.production.yml
+5:    image: ${MARIADB_IMAGE:?Set immutable MARIADB_IMAGE digest}
+23:    image: ${WORDPRESS_IMAGE:?Set immutable WORDPRESS_IMAGE digest}
+PASS: rg -n MARIADB_IMAGE:\?Set immutable|WORDPRESS_IMAGE:\?Set immutable /workspace/rang/docker-compose.production.yml
+PASS: not_rg rootlocal|WP_DEBUG_LOG=1|unsafe-eval /workspace/rang/docker-compose.yml /workspace/rang/docker-compose.production.yml /workspace/rang/.env.example /workspace/rang/setup-env.sh /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+94:    header('Content-Security-Policy: default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-ancestors \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;');
+PASS: rg -n script-src|style-src-attr /workspace/rang/wp-content/plugins/bamero-production-core/bamero-production-core.php
+PASS: supply-chain production preflight; registry/image scan remains deployment-time
+PASS: bash /workspace/rang/tests/supply_chain_preflight.sh
+54:$dfm = getenv('DISALLOW_FILE_MODS');
+55:define('DISALLOW_FILE_MODS', filter_var($dfm !== false ? $dfm : '1', FILTER_VALIDATE_BOOLEAN));
+PASS: rg -n DISALLOW_FILE_MODS /workspace/rang/wp-config.php
+PASS: not_rg \b(margin|padding|inset)-(left|right)\s*: /workspace/rang/wp-content/themes/bamero --glob=*.css
+PASS: not_rg put-your-unique-phrase /workspace/rang/wp-config.php
+NOTE: PHP 8.3 lint is executed separately; WordPress integration tests still require staging.
+EXIT=0
+=== ui_ux_static_checks.sh ===
+PASS: test -s /workspace/rang/wp-content/themes/bamero/assets/fonts/Vazirmatn-wght.woff2
+PASS: test -s /workspace/rang/wp-content/themes/bamero/assets/fonts/OFL.txt
+PASS: test -s /workspace/rang/wp-content/themes/bamero/css/icons.css
+PASS: no external font/icon CDN or CSS import
+PASS: no physical float or spacing directions
+PASS: no physical text alignment directions
+7:  font-display: swap;
+PASS: rg -n font-display:\s*swap /workspace/rang/wp-content/themes/bamero/css/variables.css
+1017:  body.single-product { padding-block-end: calc(76px + env(safe-area-inset-bottom)); }
+1018:  body.single-product .single_add_to_cart_button { inset-block-end: env(safe-area-inset-bottom); }
+PASS: rg -n env\(safe-area-inset-bottom\) /workspace/rang/wp-content/themes/bamero/css/woocommerce.css
+/workspace/rang/wp-content/themes/bamero/style.css:656:@media (prefers-reduced-motion: reduce) {
+/workspace/rang/wp-content/themes/bamero/style.css:746:@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .product-card:hover, li.product:hover { transform: none; } }
+/workspace/rang/wp-content/themes/bamero/style.css:764:@media (prefers-reduced-motion: reduce) { .bamero-category-card,.bamero-product-card,.bamero-product-media img { transition: none; }.bamero-category-card:hover,.bamero-product-card:hover { transform: none; } }
+/workspace/rang/wp-content/themes/bamero/style.css:776:@media (prefers-reduced-motion: reduce) {
+/workspace/rang/wp-content/themes/bamero/css/storefront-modern.css:186:@media (prefers-reduced-motion: reduce) {
+/workspace/rang/wp-content/themes/bamero/css/woocommerce.css:1010:@media (prefers-reduced-motion: reduce) {
+PASS: rg -n prefers-reduced-motion /workspace/rang/wp-content/themes/bamero --glob=*.css
+121:        'bamero-icons',
+182:function bamero_preload_primary_font() {
+190:add_action('wp_head', 'bamero_preload_primary_font', 1);
+PASS: rg -n 'bamero-icons'|bamero_preload_primary_font /workspace/rang/wp-content/themes/bamero/functions.php
+PASS: all CSS custom properties have a token definition
+EXIT=0
+=== seed-count-check.sh ===
+PASS: exactly 10 catalog products; no synthetic/sample users; no bulk seed markers
+EXIT=0

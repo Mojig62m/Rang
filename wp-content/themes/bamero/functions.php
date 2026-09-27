@@ -875,12 +875,6 @@ function bamero_disable_bloat() {
 }
 add_action('init', 'bamero_disable_bloat', 1);
 
-/** Resource hints: preconnect only critical origins */
-function bamero_resource_hints($urls, $relation_type) {
-    return $urls;
-}
-add_filter('wp_resource_hints', 'bamero_resource_hints', 10, 2);
-
 /** Fetchpriority on LCP candidate (logo / product image) */
 function bamero_fetchpriority_logo($attr, $attachment, $size) {
     if (is_admin()) {

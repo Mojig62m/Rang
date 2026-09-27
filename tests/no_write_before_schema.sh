@@ -9,7 +9,6 @@ checks = [
     ("woocommerce-setup.php", "bamero_create_product_categories", "bamero_wc_setup_schema_is_validated", "wp_insert_term"),
     ("woocommerce-setup.php", "bamero_create_product_tags", "bamero_wc_setup_schema_is_validated", "wp_insert_term"),
     ("woocommerce-setup.php", "bamero_create_catalog_products", "bamero_wc_setup_schema_is_validated", "wp_insert_post"),
-    ("woocommerce-setup.php", "bamero_create_test_users", "bamero_wc_setup_schema_is_validated", "wp_insert_user"),
     ("woocommerce-setup.php", "bamero_configure_woocommerce", "bamero_wc_setup_schema_is_validated", "update_option"),
     ("bamero-mobile-auth.php", "bamero_request_otp", "bamero_auth_schema_validate", "set_transient"),
     ("bamero-mobile-auth.php", "bamero_verify_otp", "bamero_auth_schema_validate", "set_transient"),

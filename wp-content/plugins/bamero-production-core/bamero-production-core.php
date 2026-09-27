@@ -141,7 +141,7 @@ function bamero_health_readiness_checks() {
         'database' => bamero_health_db_probe(),
         'woocommerce' => class_exists('WooCommerce'),
         'outbox_table' => $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table,
-        'sms_provider_configured' => (bool) has_filter('bamero_sms_provider') && $sms_configured,
+        'sms_provider_configured' => (bool) has_filter('bamero_sms_provider_send') && $sms_configured,
         'zarinpal_secret' => (bool) getenv('ZARINPAL_MERCHANT_ID'),
     );
 }

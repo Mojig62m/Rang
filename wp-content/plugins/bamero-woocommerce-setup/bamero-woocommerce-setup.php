@@ -45,7 +45,6 @@ function bamero_wc_setup_activate() {
     bamero_create_product_tags();
     bamero_prune_excess_seed_data();
     bamero_create_catalog_products();
-    bamero_create_test_users();
     bamero_configure_woocommerce();
     flush_rewrite_rules();
 }
@@ -135,28 +134,8 @@ function bamero_prune_excess_seed_data() {
     }
     $seed_users = get_users(array('meta_key' => '_bamero_seed_record', 'meta_value' => 'test-users-v1', 'fields' => 'ID'));
     foreach ($seed_users as $user_id) {
-        $login = get_userdata($user_id)->user_login;
-        if (!preg_match('/^bamero_test_(0[1-9]|10)$/', $login)) wp_delete_user($user_id);
-    }
-}
-
-function bamero_create_test_users() {
-    if (!bamero_wc_setup_schema_is_validated()) return;
-    $segments = array('browser', 'browser', 'browser', 'browser', 'browser', 'browser', 'browser', 'buyer', 'buyer', 'abandoner');
-    foreach ($segments as $index => $segment) {
-        $number = str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT);
-        $username = 'bamero_test_' . $number;
-        $email = $username . '@example.invalid';
-        $user = get_user_by('login', $username);
-        if (!$user) {
-            $user_id = wp_insert_user(array('user_login' => $username, 'user_pass' => wp_generate_password(24, true, true), 'user_email' => $email, 'display_name' => 'کاربر تست بامرو ' . ($index + 1), 'role' => 'customer'));
-            if (is_wp_error($user_id)) continue;
-        } else {
-            $user_id = $user->ID;
-        }
-        update_user_meta($user_id, 'billing_phone', '09' . str_pad((string) (100000000 + $index), 9, '0', STR_PAD_LEFT));
-        update_user_meta($user_id, '_bamero_test_segment', $segment);
-        update_user_meta($user_id, '_bamero_seed_record', 'test-users-v1');
+        // Remove any legacy synthetic sample customers; real customers are phone-verified only.
+        wp_delete_user($user_id);
     }
 }
 

@@ -88,49 +88,6 @@ function bamero_otp_transient_key($phone) {
 }
 
 /**
- * Rate-limit key.
- */
-function bamero_otp_rate_key($phone) {
-    return 'bamero_otp_rate_' . md5($phone);
-}
-
-/**
- * SMS send adapter.
- * Production: owner configures BAMERO_SMS_PROVIDER via filter or constant.
- * Does NOT invent credentials. Returns WP_Error if no provider configured.
- *
- * @param string $phone Normalized 98...
- * @param string $message Message body.
- * @return true|WP_Error
- */
-function bamero_send_sms($phone, $message) {
-    $has_provider = (bool) has_filter('bamero_sms_provider') || (bool) has_filter('bamero_send_sms');
-    if (!$has_provider) {
-        // AUTH-01: hard fail — SMS provider filter must be registered
-        if (function_exists('wp_die')) {
-            wp_die(
-                esc_html__('SMS_NOT_CONFIGURED: فیلتر bamero_sms_provider یا bamero_send_sms ثبت نشده است.', 'bamero-mobile-auth'),
-                'SMS_NOT_CONFIGURED',
-                array('response' => 503)
-            );
-        }
-        header('HTTP/1.1 503 Service Unavailable');
-        die('SMS_NOT_CONFIGURED');
-    }
-    $result = apply_filters('bamero_send_sms', null, $phone, $message);
-    if ($result === null) {
-        $result = apply_filters('bamero_sms_provider', null, $phone, $message);
-    }
-    if ($result === true) {
-        return true;
-    }
-    if (is_wp_error($result)) {
-        return $result;
-    }
-    return new WP_Error('bamero_sms_failed', __('ارسال پیامک ناموفق بود.', 'bamero-mobile-auth'));
-}
-
-/**
  * Request OTP for registration or login.
  */
 function bamero_request_otp($phone_raw, $context = 'login') {
@@ -571,3 +528,44 @@ $bamero_email_ids = array(
 foreach ($bamero_email_ids as $hook) {
     add_filter($hook, 'bamero_disable_customer_emails', 10, 2);
 }
+
+/**
+ * Phone-only policy: there is no customer password, so every password-reset /
+ * lost-password surface must be disabled. Customers authenticate only via OTP.
+ */
+function bamero_disable_password_reset() {
+    // Core: block the retrieve/reset key flow entirely.
+    add_filter('allow_password_reset', '__return_false');
+    add_filter('lostpassword_url', '__return_empty_string');
+
+    // Block wp-login.php reset actions (lostpassword / rp / resetpass).
+    add_action('login_init', function () {
+        $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
+        if (in_array($action, array('lostpassword', 'rp', 'resetpass'), true)) {
+            wp_safe_redirect(home_url('/'));
+            exit;
+        }
+    });
+
+    // Block the WooCommerce lost-password endpoint.
+    add_action('template_redirect', function () {
+        if (!function_exists('is_account_page') || !is_account_page()) {
+            return;
+        }
+        global $wp;
+        if (isset($wp->query_vars['lost-password'])) {
+            wp_safe_redirect(wc_get_page_permalink('myaccount') ?: home_url('/'));
+            exit;
+        }
+    }, 1);
+}
+add_action('init', 'bamero_disable_password_reset', 5);
+
+/**
+ * Persistent login: remembered sessions last 90 days so customers do not have
+ * to re-authenticate on every visit. Session (non-remembered) cookies keep the
+ * WordPress default length.
+ */
+add_filter('auth_cookie_expiration', function ($length, $user_id, $remember) {
+    return $remember ? 90 * DAY_IN_SECONDS : $length;
+}, 10, 3);
