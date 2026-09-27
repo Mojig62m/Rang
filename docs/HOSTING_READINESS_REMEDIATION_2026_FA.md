@@ -22,8 +22,8 @@
 | ۱ | تعریف تکراری `bamero_csp_nonce()` | `themes/bamero/functions.php` | افزودن گارد `function_exists` | ✅ رفع شد |
 | ۲ | تعریف تکراری `bamero_security_headers()` | `themes/bamero/functions.php` | افزودن گارد `function_exists` | ✅ رفع شد |
 | ۳ | هدرهای امنیتی ناقص در نسخهٔ کانونیک | `plugins/bamero-production-core/...` | افزودن `X-Frame-Options` و `form-action 'self'` | ✅ بهبود یافت |
-| ۴ | JSON-LD بدون nonce | `themes/bamero/front-page.php` | افزودن `nonce` | ✅ رفع شد |
-| ۵ | JSON-LD بدون nonce | `themes/bamero/functions.php` | افزودن `nonce` | ✅ رفع شد |
+| ۴ | JSON-LD بدون nonce | `themes/bamero/front-page.php` | افزودن `nonce` (سخت‌سازی دفاعی) | ✅ اعمال شد |
+| ۵ | JSON-LD بدون nonce | `themes/bamero/functions.php` | افزودن `nonce` (سخت‌سازی دفاعی) | ✅ اعمال شد |
 | ۶ | ارجاع CI به فایل ناموجود `tests/production_gate.sh` | `.github/workflows/production-gate.yml` + `tests/` | ساخت گیت واقعی | ✅ رفع شد |
 
 ---
