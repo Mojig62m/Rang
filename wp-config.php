@@ -72,7 +72,9 @@ function bamero_load_env_file(): void {
             }
 
             if (getenv($key) === false || getenv($key) === '') {
-                putenv($key . '=' . $value);
+                if (function_exists('putenv')) {
+                    @putenv($key . '=' . $value);
+                }
                 $_ENV[$key]    = $value;
                 $_SERVER[$key] = $value;
             }
@@ -89,6 +91,10 @@ bamero_load_env_file();
  */
 function bamero_require_env(string $key): string {
     $value = getenv($key);
+    if ($value === false || $value === '') {
+        // Fallbacks for hosts where putenv()/getenv() is restricted.
+        $value = isset($_ENV[$key]) ? $_ENV[$key] : (isset($_SERVER[$key]) ? $_SERVER[$key] : '');
+    }
     if ($value === false || $value === '') {
         http_response_code(500);
         header('Content-Type: text/plain; charset=UTF-8');
