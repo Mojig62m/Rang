@@ -65,7 +65,7 @@ Rang/
 ├── .env.example                  # الگوی متغیرهای محیطی (کپی به .env و تکمیل کنید)
 ├── README.md                     # مستندات پروژه
 ├── GO_LIVE_PHP_HOSTING_FA.md     # راهنمای گام‌به‌گام استقرار روی هاست PHP
-├── docs/                         # مستندات فنی و شواهد (از استقرار عمومی مستثناست)
+├── docs/                         # ADR معماری + مدل تهدید (از استقرار عمومی مستثناست)
 ├── tests/                        # گیت‌های قابل‌تکرار کد (PHP CLI)
 └── wp-content/
     ├── themes/
@@ -156,8 +156,8 @@ bash tests/production_gate.sh
 
 برای اطلاعات بیشتر، به فایل‌های زیر مراجعه کنید:
 - [GO_LIVE_PHP_HOSTING_FA.md](GO_LIVE_PHP_HOSTING_FA.md) - راهنمای استقرار روی هاست PHP
-- [DECISIONS.md](DECISIONS.md) - ثبت تصمیمات پروژه
-- [گزارش نهایی آمادگی استقرار ۲۰۲۶](docs/PRODUCTION_READINESS_FINAL_2026_FA.md) - شواهد، منابع و گیت‌های Go-Live
+- [docs/adrs/0001-architecture.md](docs/adrs/0001-architecture.md) - تصمیمات معماری (ADR)
+- [docs/wp-threat-model.md](docs/wp-threat-model.md) - مدل تهدید امنیتی
 - [wp-content/themes/bamero/README.md](wp-content/themes/bamero/README.md) - مستندات تم
 
 ## مشارکت

@@ -10,9 +10,9 @@
 
 | مورد | حداقل |
 |------|-------|
-| PHP | 8.1 یا بالاتر (8.2/8.3 توصیه می‌شود) |
+| PHP | 8.1 یا بالاتر؛ **8.3+ توصیهٔ رسمی WordPress** |
 | افزونه‌های PHP | `mbstring`, `curl`, `openssl`, `json`, `gd`/`imagick` |
-| پایگاه‌داده | MySQL 5.7+ / MariaDB 10.4+ با charset `utf8mb4` |
+| پایگاه‌داده | **MySQL 8.0+ یا MariaDB 10.11+** (توصیهٔ رسمی) با charset `utf8mb4` |
 | SSL | گواهی HTTPS فعال (Let's Encrypt) |
 | دسترسی | FTP/SFTP یا File Manager پنل هاست |
 
