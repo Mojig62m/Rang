@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Bamero Custom Plugin
- * Plugin URI: https://github.com/mojirt37/refactored-octo-waddle
+ * Plugin URI: https://github.com/Mojim62/Rang
  * Description: Creates Bamero content pages. Theme-owned storefront presentation and product fields remain available when this plugin is inactive.
  * Version: 1.1.0
- * Author: Moji Moji
- * Author URI: https://github.com/mojirt37
+ * Author: Bamero
+ * Author URI: https://github.com/Mojim62/Rang
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
  * Text Domain: bamero-custom-plugin

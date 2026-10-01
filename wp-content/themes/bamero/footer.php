@@ -6,8 +6,8 @@
  */
 defined('ABSPATH') || exit;
 
-$phone   = '۰۹۱۳۴۲۹۲۳۲۹';
-$address = 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه';
+$phone   = bamero_phone_display();
+$address = bamero_address_display();
 ?>
 <footer class="site-footer">
     <div class="footer-grid">
@@ -34,7 +34,7 @@ $address = 'اصفهان، خیابان خرم، نرسیده به خیابان 
         <div class="footer-support">
             <h3><?php echo esc_html__('پشتیبانی موبایلی', 'bamero'); ?></h3>
             <p><?php echo esc_html__('برای پیگیری سفارش یا دریافت مشاوره با شمارهٔ فروشگاه تماس بگیرید.', 'bamero'); ?></p>
-            <a class="footer-support-link" href="tel:+989134292329">۰۹۱۳۴۲۹۲۳۲۹</a>
+            <a class="footer-support-link" href="tel:<?php echo esc_attr(bamero_phone_e164()); ?>"><?php echo esc_html(bamero_phone_display()); ?></a>
         </div>
     </div>
     <div class="footer-bottom">

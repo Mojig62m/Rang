@@ -682,8 +682,8 @@ function bamero_output_entity_graph() {
     $site_name = get_bloginfo('name') ?: 'بامرو';
     $site_url  = home_url('/');
     $logo      = BAMERO_THEME_DIR . '/images/logo.png';
-    $phone     = get_theme_mod('bamero_phone_number', '+989134292329');
-    $address   = get_theme_mod('bamero_address', 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه');
+    $phone     = bamero_phone_e164();
+    $address   = bamero_address_display();
 
     $graph = array(
         '@context' => 'https://schema.org',
@@ -726,7 +726,7 @@ function bamero_output_entity_graph() {
                     'addressRegion'   => 'اصفهان',
                     'addressCountry'  => 'IR',
                 ),
-                // GEO: approximate central Tehran – replace with exact coords in Customizer later
+                // GEO: approximate central Isfahan — replace with exact coordinates for the store.
                 'geo' => array(
                     '@type'     => 'GeoCoordinates',
                     'latitude'  => 32.666756,
@@ -994,3 +994,107 @@ add_filter('wp_revisions_to_keep', function ($num, $post) {
 if (!defined('AUTOSAVE_INTERVAL')) {
     define('AUTOSAVE_INTERVAL', 120);
 }
+
+// =============================================================================
+// CONTACT DETAILS + CUSTOMIZER (owner-configurable; no hard-coded brand values)
+// =============================================================================
+
+/** Convert Persian/Arabic-Indic digits to ASCII. */
+function bamero_ascii_digits($value) {
+    $map = array(
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    );
+    return strtr((string) $value, $map);
+}
+
+/** Display phone number exactly as the owner entered it. */
+function bamero_phone_display() {
+    return (string) get_theme_mod('bamero_phone_number', '۰۹۱۳۴۲۹۲۳۲۹');
+}
+
+/** Phone number in E.164 form (for tel: links), derived from the display value. */
+function bamero_phone_e164() {
+    $digits = preg_replace('/\D+/', '', bamero_ascii_digits(bamero_phone_display()));
+    if ($digits === '') {
+        return '';
+    }
+    if (strpos($digits, '98') === 0) {
+        return '+' . $digits;
+    }
+    if ($digits[0] === '0') {
+        return '+98' . substr($digits, 1);
+    }
+    return '+98' . $digits;
+}
+
+/** Store address as configured by the owner. */
+function bamero_address_display() {
+    return (string) get_theme_mod('bamero_address', 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه');
+}
+
+/** Default WhatsApp deep link derived from the configured phone number. */
+function bamero_whatsapp_default() {
+    $digits = preg_replace('/\D+/', '', bamero_ascii_digits(bamero_phone_display()));
+    return $digits === '' ? '' : 'https://wa.me/' . $digits;
+}
+
+/** Register owner-configurable storefront settings (Appearance > Customize). */
+function bamero_customize_register($wp_customize) {
+    $wp_customize->add_section('bamero_contact', array(
+        'title'       => __('اطلاعات تماس بامرو', 'bamero'),
+        'description' => __('این مقادیر در سربرگ، پاورقی و داده‌های ساختاریافته (Schema) استفاده می‌شوند.', 'bamero'),
+        'priority'    => 30,
+    ));
+
+    $fields = array(
+        'bamero_phone_number'  => array('label' => __('شماره تماس', 'bamero'), 'type' => 'text', 'default' => '۰۹۱۳۴۲۹۲۳۲۹'),
+        'bamero_address'       => array('label' => __('نشانی', 'bamero'), 'type' => 'textarea', 'default' => 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه'),
+        'bamero_instagram_url' => array('label' => __('آدرس اینستاگرام', 'bamero'), 'type' => 'url', 'default' => ''),
+        'bamero_telegram_url'  => array('label' => __('آدرس تلگرام', 'bamero'), 'type' => 'url', 'default' => ''),
+        'bamero_whatsapp_url'  => array('label' => __('آدرس واتساپ', 'bamero'), 'type' => 'url', 'default' => ''),
+    );
+
+    foreach ($fields as $id => $field) {
+        if ($field['type'] === 'url') {
+            $sanitize = 'esc_url_raw';
+        } elseif ($field['type'] === 'textarea') {
+            $sanitize = 'sanitize_textarea_field';
+        } else {
+            $sanitize = 'sanitize_text_field';
+        }
+        $wp_customize->add_setting($id, array(
+            'default'           => $field['default'],
+            'sanitize_callback' => $sanitize,
+            'transport'         => 'refresh',
+        ));
+        $wp_customize->add_control($id, array(
+            'label'   => $field['label'],
+            'section' => 'bamero_contact',
+            'type'    => $field['type'],
+        ));
+    }
+}
+add_action('customize_register', 'bamero_customize_register');
+
+// =============================================================================
+// DYNAMIC robots.txt (domain-agnostic; no hard-coded production host)
+// =============================================================================
+
+/**
+ * Serve robots.txt dynamically so the Sitemap URL always matches the real
+ * domain the owner configures under Settings > General. A static file would
+ * hard-code a host that does not exist yet.
+ */
+function bamero_robots_txt($output, $public) {
+    if (!$public) {
+        return $output;
+    }
+    if (stripos($output, 'Sitemap:') === false) {
+        $output = rtrim($output) . "\n\nSitemap: " . home_url('/wp-sitemap.xml') . "\n";
+    }
+    return $output;
+}
+add_filter('robots_txt', 'bamero_robots_txt', 99, 2);
