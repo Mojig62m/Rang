@@ -1,304 +1,102 @@
 <?php
 /**
- * Homepage Template for Bamero Theme
+ * Fallback / Archive / Search Template for Bamero Theme
+ *
+ * The homepage is rendered by front-page.php and static pages by page.php.
+ * This template is the WordPress-hierarchy fallback used for archives, search
+ * results, the blog index and any other listing view. It renders a real loop
+ * (products use the WooCommerce product card, other post types a simple card)
+ * and never references placeholder/brand imagery.
  *
  * @package Bamero
  */
 
+defined('ABSPATH') || exit;
+
 get_header();
 
-// PHP-03: single product query + transient cache (1h)
-$bamero_home_products = get_transient('bamero_home_products_v1');
-if (false === $bamero_home_products || !is_array($bamero_home_products)) {
-    $q = new WP_Query(array(
-        'post_type'           => 'product',
-        'posts_per_page'      => 12,
-        'post_status'         => 'publish',
-        'orderby'             => 'date',
-        'order'               => 'DESC',
-        'no_found_rows'       => true,
-        'ignore_sticky_posts' => true,
-    ));
-    $bamero_home_products = $q->posts;
-    set_transient('bamero_home_products_v1', $bamero_home_products, 3600);
-    wp_reset_postdata();
+// Contextual, human-readable heading for the current view.
+if (is_search()) {
+    /* translators: %s: search query */
+    $bamero_title = sprintf(__('نتایج جستجو برای: %s', 'bamero'), get_search_query());
+} elseif (is_archive()) {
+    $bamero_title = wp_strip_all_tags(get_the_archive_title());
+} elseif (is_home() && !is_front_page()) {
+    $bamero_title = single_post_title('', false);
+    $bamero_title = $bamero_title ? $bamero_title : __('آخرین مطالب', 'bamero');
+} else {
+    $bamero_title = get_the_title();
+    $bamero_title = $bamero_title ? $bamero_title : get_bloginfo('name');
 }
-
-$product_categories = get_terms(array(
-    'taxonomy'   => 'product_cat',
-    'hide_empty' => true,
-    'number'     => 4,
-));
-if (is_wp_error($product_categories)) {
-    $product_categories = array();
-}
-
-// Schema Markup for homepage
-$schema_markup = array(
-    "@context" => "https://schema.org",
-    "@type" => "WebSite",
-    "name" => get_bloginfo('name'),
-    "url" => home_url('/'),
-    "description" => get_bloginfo('description'),
-    "potentialAction" => array(
-        "@type" => "SearchAction",
-        "target" => home_url('/?s={search_term_string}&post_type=product'),
-        "query-input" => "required name=search_term_string"
-    )
-);
-
 ?>
 
-<!-- Schema Markup -->
-<script type="application/ld+json" nonce="<?php echo esc_attr(function_exists('bamero_csp_nonce') ? bamero_csp_nonce() : ''); ?>">
-<?php echo json_encode($schema_markup, JSON_UNESCAPED_UNICODE); ?>
-</script>
+<main id="main-content" class="bamero-archive" tabindex="-1">
 
-<main id="main-content" class="rtl">
-    <!-- Hero Banner -->
-    <section class="hero-banner" aria-label="بنر اصلی">
-        <div class="hero-content container">
-            <h1><?php echo esc_html__('رنگ‌های باکیفیت برای ساختمان شما', 'bamero'); ?></h1>
-            <p><?php echo esc_html__('مرجع رنگ و محصولات ساختمانی در ایران', 'bamero'); ?></p>
-            <div class="hero-buttons">
-                <a href="<?php echo esc_url(wc_get_page_permalink('shop')); ?>" class="button cta-button">
-                    <i class="fas fa-shopping-bag"></i> <?php echo esc_html__('مشاهده محصولات', 'bamero'); ?>
-                </a>
-                <a href="<?php echo esc_url(get_permalink(get_page_by_path('consultation'))); ?>" class="button button-secondary">
-                    <i class="fas fa-comments"></i> <?php echo esc_html__('دریافت مشاوره رایگان', 'bamero'); ?>
-                </a>
-            </div>
+    <div class="page-hero" aria-label="<?php echo esc_attr($bamero_title); ?>">
+        <div class="container">
+            <h1><?php echo esc_html($bamero_title); ?></h1>
         </div>
-    </section>
+    </div>
 
-    <!-- Featured Products -->
-    <section class="featured-products container" aria-label="محصولات پرفروش">
-        <div class="section-header">
-            <h2><?php echo esc_html__('محصولات پرفروش', 'bamero'); ?></h2>
-            <a href="<?php echo esc_url(wc_get_page_permalink('shop')); ?>" class="view-all-link">
-                <?php echo esc_html__('مشاهده همه', 'bamero'); ?> <i class="fas fa-chevron-left"></i>
-            </a>
-        </div>
-        <div class="products-grid">
-            <?php
-            $slice = array_slice($bamero_home_products, 0, 8);
-            if (!empty($slice)) :
-                foreach ($slice as $post) :
-                    setup_postdata($GLOBALS['post'] = $post);
-                    $product = function_exists('wc_get_product') ? wc_get_product($post->ID) : null;
-                    if (!$product) { continue; }
-                    ?>
-                    <div class="product-card">
-                        <a href="<?php the_permalink(); ?>">
-                            <?php
-                            if (has_post_thumbnail()) {
-                                the_post_thumbnail('bamero-thumbnail');
-                            } else {
-                                echo '<img src="' . esc_url(BAMERO_THEME_DIR . '/images/placeholder.svg') . '" alt="' . esc_attr(get_the_title()) . '" width="300" height="300" />';
-                            }
-                            ?>
-                            <h3><?php the_title(); ?></h3>
-                            <span class="price"><?php echo wp_kses_post($product->get_price_html()); ?></span>
-                        </a>
-                        <div class="product-actions">
-                            <?php woocommerce_template_loop_add_to_cart(); ?>
-                        </div>
-                    </div>
-                    <?php
-                endforeach;
-                wp_reset_postdata();
-            else :
-                echo '<p class="text-center">' . esc_html__('هیچ محصولی یافت نشد.', 'bamero') . '</p>';
-            endif;
-            ?>
-        </div>
-    </section>
+    <div class="container bamero-archive-body">
 
-    <!-- Product Categories -->
-    <section class="product-categories container" aria-label="دسته‌بندی محصولات">
-        <div class="section-header">
-            <h2><?php echo esc_html__('دسته‌بندی محصولات', 'bamero'); ?></h2>
-        </div>
-        <div class="categories-grid">
-            <?php
-            foreach ($product_categories as $category) :
-                $thumbnail_id = get_term_meta($category->term_id, 'thumbnail_id', true);
-                $image = wp_get_attachment_url($thumbnail_id);
-                $placeholder = BAMERO_THEME_DIR . '/images/placeholder.svg';
-                
-                if (!$image) {
-                    $image = $placeholder;
-                }
-                ?>
-                <div class="category-card">
-                    <a href="<?php echo esc_url(get_term_link($category)); ?>">
-                        <div class="category-image">
-                            <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($category->name); ?>" loading="lazy" />
-                        </div>
-                        <h3><?php echo esc_html($category->name); ?></h3>
-                        <span class="category-count">
-                            <?php echo esc_html($category->count); ?> <?php echo esc_html__('محصول', 'bamero'); ?>
-                        </span>
-                    </a>
-                </div>
+        <?php if (have_posts()) : ?>
+
+            <div class="products-grid bamero-archive-grid">
                 <?php
-            endforeach;
-            ?>
-        </div>
-    </section>
+                while (have_posts()) :
+                    the_post();
 
-    <!-- Latest Products -->
-    <section class="latest-products container" aria-label="جدیدترین محصولات">
-        <div class="section-header">
-            <h2><?php echo esc_html__('جدیدترین محصولات', 'bamero'); ?></h2>
-            <a href="<?php echo esc_url(wc_get_page_permalink('shop')); ?>?orderby=date" class="view-all-link">
-                <?php echo esc_html__('مشاهده همه', 'bamero'); ?> <i class="fas fa-chevron-left"></i>
-            </a>
-        </div>
-        <div class="products-grid">
-            <?php
-            $slice = array_slice($bamero_home_products, 0, 4);
-            if (!empty($slice)) :
-                foreach ($slice as $post) :
-                    setup_postdata($GLOBALS['post'] = $post);
-                    $product = function_exists('wc_get_product') ? wc_get_product($post->ID) : null;
-                    if (!$product) { continue; }
+                    if (get_post_type() === 'product' && function_exists('wc_get_template_part')) {
+                        // Real WooCommerce product card (theme override: woocommerce/content-product.php).
+                        wc_get_template_part('content', 'product');
+                        continue;
+                    }
                     ?>
-                    <div class="product-card">
+                    <article id="post-<?php the_ID(); ?>" <?php post_class('product-card bamero-post-card'); ?>>
                         <a href="<?php the_permalink(); ?>">
-                            <?php
-                            if (has_post_thumbnail()) {
-                                the_post_thumbnail('bamero-thumbnail');
-                            } else {
-                                echo '<img src="' . esc_url(BAMERO_THEME_DIR . '/images/placeholder.svg') . '" alt="' . esc_attr(get_the_title()) . '" width="300" height="300" />';
-                            }
-                            ?>
+                            <?php if (has_post_thumbnail()) : ?>
+                                <?php the_post_thumbnail('medium', array('loading' => 'lazy')); ?>
+                            <?php else : ?>
+                                <div class="bamero-post-art" aria-hidden="true"><span>BAMERO</span></div>
+                            <?php endif; ?>
                             <h3><?php the_title(); ?></h3>
-                            <span class="price"><?php echo wp_kses_post($product->get_price_html()); ?></span>
                         </a>
-                        <div class="product-actions">
-                            <?php woocommerce_template_loop_add_to_cart(); ?>
+                        <div class="bamero-post-excerpt">
+                            <?php the_excerpt(); ?>
                         </div>
-                    </div>
+                        <a class="button" href="<?php the_permalink(); ?>">
+                            <?php echo esc_html__('ادامه مطلب', 'bamero'); ?>
+                        </a>
+                    </article>
                     <?php
-                endforeach;
-                wp_reset_postdata();
-            else :
-                echo '<p class="text-center">' . esc_html__('هیچ محصول جدیدی یافت نشد.', 'bamero') . '</p>';
-            endif;
-            ?>
-        </div>
-    </section>
-
-    <!-- On Sale Products -->
-    <?php
-    $on_sale_list = array();
-    foreach ($bamero_home_products as $post) {
-        $pr = function_exists('wc_get_product') ? wc_get_product($post->ID) : null;
-        if ($pr && $pr->is_on_sale()) {
-            $on_sale_list[] = $post;
-        }
-    }
-    if (!empty($on_sale_list)) :
-    ?>
-
-    <section class="on-sale-products container" aria-label="محصولات تخفیف‌دار">
-        <div class="section-header">
-            <h2><?php echo esc_html__('محصولات تخفیف‌دار', 'bamero'); ?></h2>
-            <a href="<?php echo esc_url(wc_get_page_permalink('shop')); ?>?orderby=price-desc" class="view-all-link">
-                <?php echo esc_html__('مشاهده همه', 'bamero'); ?> <i class="fas fa-chevron-left"></i>
-            </a>
-        </div>
-        <div class="products-grid">
-            <?php
-            foreach (array_slice($on_sale_list, 0, 4) as $post) : setup_postdata($GLOBALS['post'] = $post); $product = wc_get_product($post->ID); if (!$product) { continue; }
-                global $product;
+                endwhile;
                 ?>
-                <div class="product-card">
-                    <a href="<?php the_permalink(); ?>">
-                        <?php
-                        if (has_post_thumbnail()) {
-                            the_post_thumbnail('bamero-thumbnail');
-                        } else {
-                            echo '<img src="' . esc_url(BAMERO_THEME_DIR . '/images/placeholder.svg') . '" alt="' . esc_attr(get_the_title()) . '" />';
-                        }
-                        ?>
-                        <?php if ($product->is_on_sale()) : ?>
-                            <span class="onsale"><?php echo esc_html__('تخفیف', 'bamero'); ?></span>
-                        <?php endif; ?>
-                        <h3><?php the_title(); ?></h3>
-                        <span class="price"><?php echo wc_price($product->get_price()); ?></span>
-                    </a>
-                    <div class="product-actions">
-                        <?php woocommerce_template_loop_add_to_cart(); ?>
-                    </div>
-                </div>
-                <?php
-            endforeach;
-            wp_reset_postdata();
-            ?>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- About Section -->
-    <section class="about-section container" aria-label="درباره بامرو">
-        <div class="about-content">
-            <h2><?php echo esc_html__('درباره بامرو', 'bamero'); ?></h2>
-            <p><?php echo esc_html__('بامرو با سال‌ها تجربه در زمینه فروش رنگ و محصولات ساختمانی، آماده ارائه بهترین خدمات به شما مشتریان عزیز است. ما با هدف ارائه محصولات با کیفیت بالا و خدمات استثنایی، همواره در حال بهبود و نوآوری بوده‌ایم.', 'bamero'); ?></p>
-            <div class="about-features">
-                <div class="feature">
-                    <i class="fas fa-check-circle"></i>
-                    <h3><?php echo esc_html__('کیفیت بالا', 'bamero'); ?></h3>
-                    <p><?php echo esc_html__('تمام محصولات ما از برندهای معتبر و با کیفیت بالا هستند.', 'bamero'); ?></p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-tag"></i>
-                    <h3><?php echo esc_html__('قیمت مناسب', 'bamero'); ?></h3>
-                    <p><?php echo esc_html__('ما همواره سعی می‌کنیم بهترین قیمت‌ها را به شما ارائه دهیم.', 'bamero'); ?></p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-shipping-fast"></i>
-                    <h3><?php echo esc_html__('تحویل سریع', 'bamero'); ?></h3>
-                    <p><?php echo esc_html__('سفارشات شما در سریع‌ترین زمان ممکن تحویل داده می‌شوند.', 'bamero'); ?></p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-comments"></i>
-                    <h3><?php echo esc_html__('مشاوره رایگان', 'bamero'); ?></h3>
-                    <p><?php echo esc_html__('تیم ما آماده ارائه مشاوره رایگان در مورد انتخاب رنگ و محصولات است.', 'bamero'); ?></p>
-                </div>
             </div>
-            <div class="about-cta">
-                <a href="<?php echo esc_url(get_permalink(get_page_by_path('about'))); ?>" class="button">
-                    <?php echo esc_html__('بیشتر بدانید', 'bamero'); ?>
+
+            <?php
+            the_posts_pagination(array(
+                'mid_size'  => 1,
+                'prev_text' => esc_html__('قبلی', 'bamero'),
+                'next_text' => esc_html__('بعدی', 'bamero'),
+            ));
+            ?>
+
+        <?php else : ?>
+
+            <div class="bamero-empty-state text-center">
+                <h2><?php echo esc_html__('موردی یافت نشد', 'bamero'); ?></h2>
+                <p><?php echo esc_html__('چیزی مطابق جستجوی شما پیدا نشد. می‌توانید عبارت دیگری را امتحان کنید یا از فروشگاه بازدید کنید.', 'bamero'); ?></p>
+                <?php get_search_form(); ?>
+                <a class="button" href="<?php echo esc_url(function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/')); ?>">
+                    <?php echo esc_html__('بازگشت به فروشگاه', 'bamero'); ?>
                 </a>
             </div>
-        </div>
-    </section>
 
-    <!-- Brands Section -->
-    <section class="brands-section container" aria-label="برندهای همکار">
-        <h2><?php echo esc_html__('برندهای همکار', 'bamero'); ?></h2>
-        <div class="brands-grid">
-            <div class="brand">
-                <img src="<?php echo esc_url(BAMERO_THEME_DIR . '/images/brand-1.png'); ?>" alt="برند ۱" loading="lazy" />
-            </div>
-            <div class="brand">
-                <img src="<?php echo esc_url(BAMERO_THEME_DIR . '/images/brand-2.png'); ?>" alt="برند ۲" loading="lazy" />
-            </div>
-            <div class="brand">
-                <img src="<?php echo esc_url(BAMERO_THEME_DIR . '/images/brand-3.png'); ?>" alt="برند ۳" loading="lazy" />
-            </div>
-            <div class="brand">
-                <img src="<?php echo esc_url(BAMERO_THEME_DIR . '/images/brand-4.png'); ?>" alt="برند ۴" loading="lazy" />
-            </div>
-            <div class="brand">
-                <img src="<?php echo esc_url(BAMERO_THEME_DIR . '/images/brand-5.png'); ?>" alt="برند ۵" loading="lazy" />
-            </div>
-        </div>
-    </section>
+        <?php endif; ?>
+
+    </div>
 </main>
 
 <?php
 get_footer();
-?>

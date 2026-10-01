@@ -776,3 +776,79 @@ img { max-inline-size: 100%; block-size: auto; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* ========== Page & Archive templates (page.php / index.php) ========== */
+.bamero-page-body,
+.bamero-archive-body {
+  padding-block: clamp(24px, 4vw, 48px) clamp(40px, 6vw, 72px);
+}
+
+.bamero-entry .entry-content,
+.entry-content {
+  color: var(--bamero-ink, #1c2430);
+  line-height: 2;
+  font-size: 1.02rem;
+}
+
+.entry-content > * + * { margin-block-start: 1.1em; }
+.entry-content h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-block: 1.4em .5em; }
+.entry-content h3 { font-size: clamp(1.15rem, 2.4vw, 1.5rem); margin-block: 1.2em .4em; }
+.entry-content a { color: var(--primary, #0057b8); text-decoration: underline; text-underline-offset: 3px; }
+.entry-content ul, .entry-content ol { padding-inline-start: 1.4rem; }
+.entry-content ul { list-style: disc; }
+.entry-content ol { list-style: decimal; }
+.entry-content img { max-inline-size: 100%; height: auto; border-radius: 16px; }
+.entry-content table { inline-size: 100%; border-collapse: collapse; }
+.entry-content th, .entry-content td { border: 1px solid rgba(21,34,56,.12); padding: 10px 12px; text-align: start; }
+
+/* Commerce pages (cart / checkout / my-account) get a wider, card-based shell */
+.bamero-page--commerce .bamero-page-body {
+  padding-block-start: clamp(20px, 3vw, 36px);
+  max-inline-size: var(--container, 1280px);
+}
+.bamero-page--commerce .entry-content { line-height: 1.9; }
+
+/* Archive / search listing */
+.bamero-archive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: clamp(14px, 2vw, 26px);
+}
+
+.bamero-post-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 18px;
+}
+.bamero-post-card > a:first-child { display: block; }
+.bamero-post-card h3 { padding-inline: 16px; margin-block: 14px 6px; font-size: 1.05rem; }
+.bamero-post-excerpt { padding-inline: 16px; color: var(--bamero-ink-muted, #5a6675); font-size: .92rem; line-height: 1.9; flex: 1; }
+.bamero-post-card .button { margin: 14px 16px 0; align-self: flex-start; }
+
+.bamero-post-art,
+.bamero-product-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(150deg, #eaf1f8, #d6e4f2);
+  color: #7d93ab;
+  font-weight: 800;
+  letter-spacing: .18em;
+  font-size: .8rem;
+  border-radius: 18px 18px 0 0;
+}
+
+.bamero-empty-state {
+  padding: clamp(28px, 5vw, 56px) 20px;
+  border: 1px dashed rgba(21,34,56,.18);
+  border-radius: 22px;
+  background: rgba(255,255,255,.7);
+}
+.bamero-empty-state h2 { margin-block-end: .4em; }
+.bamero-empty-state .button { margin-block-start: 14px; }
+.bamero-empty-state .search-form { max-inline-size: 420px; margin: 18px auto; }
+
+@media (max-width: 640px) {
+  .bamero-archive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
