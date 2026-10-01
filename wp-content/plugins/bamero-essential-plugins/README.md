@@ -10,7 +10,7 @@
 |----------------|----------|------------|--------------|
 | WooCommerce | `woocommerce` | ضروری | پلاگین اصلی فروشگاه اینترنتی |
 | YITH WooCommerce Wishlist | `yith-woocommerce-wishlist` | ضروری | افزودن لیست علاقه‌مندی |
-| WooCommerce Zarinpal Gateway | `woocommerce-zarinpal` | ضروری | درگاه پرداخت زرین‌پال |
+| Bamero Zarinpal Gateway | `bamero-zarinpal-gateway` | همراه بسته | درگاه پرداخت زرین‌پال v4 (از قبل در بسته موجود است) |
 | Autoptimize | `autoptimize` | ضروری | بهینه‌سازی CSS/JS |
 | WP Super Cache | `wp-super-cache` | ضروری | کش برای بهبود عملکرد |
 | Rank Math SEO | `seo-by-rank-math` | ضروری | بهینه‌سازی SEO |
@@ -36,7 +36,7 @@
 
 - این پلاگین به **دسترسی ادمین** نیاز دارد.
 - برای نصب پلاگین‌ها از مخزن WordPress، سایت شما باید به اینترنت متصل باشد.
-- پلاگین **WooCommerce Zarinpal Gateway** از یک منبع سفارشی نصب می‌شود.
+- درگاه **زرین‌پال بامرو** از قبل در بسته (`bamero-zarinpal-gateway`) موجود است و نیازی به نصب جداگانه ندارد.
 
 ## مستندسازی
 

@@ -1,57 +1,36 @@
-# BAMERO-REFINE-HOSTING-READY — Execution Plan
+# BAMERO-GO-LIVE-PHP-HOSTING — Execution Plan
 
-## DISCOVER
-- [x] Detect versions (WP/Woo/PHP/DB/plugins/gateway/theme)
-- [x] Map dev/test artifacts (Docker/K8s/CI-CD/Vagrant/local configs/test data)
-- [x] Produce Version Manifest + Artifact Inventory + Compatibility Matrix
-- [x] BLOCK check: critical incompatibility? (none)
+> Goal: Clean the project and convert it to a go-live-ready state for **PHP shared hosting**.
+> Zarinpal API, SMS.ir API, domain and DB credentials stay as **placeholders / env vars** — the owner fills them in at the end.
 
-## SANITIZE
-- [x] Remove Docker*/K8s*/Vagrant*/.env.local/docker-compose*/test-only Makefile
-- [x] Remove CI/CD configs not needed for hosting deploy
-- [x] Remove test fixtures/seed scripts/debug plugins/dev-only themes/phpunit.xml/jest.config*
-- [x] Clean wp-config.php (remove local overrides/test constants) + .htaccess
-- [x] Verify no secrets/tokens/credentials in codebase/configs/logs
-- [x] Filesystem diff report (before/after)
+## AUDIT
+- [x] Inventory repo (126 files), read core docs, plugins, theme, configs
+- [x] Identify stale references, hardcoded values, hosting blockers
+- [x] Confirm remaining issues list (7 items)
 
-## ENV_ALIGN
-- [x] Runtime vs detected versions; HTTPS; PHP limits
-- [x] DB charset/collation/privileges vs detected DB version
-- [x] HPOS: check Woo docs for detected version before toggle
-- [x] Deploy method: SSH/rsync/SFTP only; secrets via env/panel
+## CLEAN (repo hygiene)
+- [x] Fix stale repo URLs + author in plugin headers
+- [x] Fix stale repo URLs / structure diagram in README
+- [x] Remove hardcoded production domain (robots.txt → dynamic + docs)
+- [x] Normalize plugin folder structure (loose file + empty folder)
+- [x] Make phone/address consistently configurable (theme_mod + Customizer)
 
-## AUTH_REFINE
-- [x] Audit existing auth; CSPRNG/single-use/short-TTL/max-attempts/429
-- [x] Resend-invalidate-prev, const-time-compare, session rotation, idle+abs timeout
-- [x] Remove legacy auth only after new verified
+## HOSTING-COMPAT (PHP shared hosting)
+- [x] Add `.env` file loader to wp-config.php (works without panel env vars)
+- [x] Add optional WP_HOME / WP_SITEURL domain override via env
+- [x] Update .env.example (domain + hosting notes)
+- [x] Ensure .env is protected (htaccess) and document outside-webroot option
 
-## COMMERCE_AUDIT
-- [x] Server-side validation logic patched per detected Woo version
-- [x] Gateway audited vs official docs; Amount==Total, Status==Unpaid, sig, RefID post-verify
-- [x] Reject replay/dup-callback/mismatch/client-trust/redirect-params
-- [x] Patch AuthZ/IDOR; Paid=VerifiedOnly; dedup side effects
+## DOCS
+- [x] Rewrite README install/deploy section for PHP hosting
+- [x] Write Persian PHP-hosting go-live guide (GO_LIVE_PHP_HOSTING_FA.md)
+- [x] Add theme README (referenced but missing)
 
-## UI_CLEANUP
-- [x] Map demo→real; strip mocks/placeholders/broken links
-- [x] Verify real products/prices/stock/cart/checkout/account flow
-- [x] 320–1440px fluid; resolve overflow; mobile-safe checkout
+## PACKAGE
+- [x] Build clean deploy package (full site + wp-content overlay)
+- [x] Verify package integrity + list contents
 
-## SEO_FIX
-- [x] Canonical/robots/sitemap/semantic HTML/breadcrumbs
-- [x] Product/Offer schema from real data; remove thin/stuffed/doorway pages
-
-## SECURITY_HARDEN
-- [x] Validate/sanitize/escape/CSRF/secure-cookie/prepared-stmts
-- [x] Scrub secrets/OTP/tokens/PII from logs/code/frontend
-- [x] Security-event logging only; structured; hosting-compatible path
-
-## PERF_OPTIMIZE
-- [x] CWV measure→fix LCP/INP/CLS
-- [x] Optimize assets; mobile-verify; CDN/cache compatible
-
-## RECOVERY_PROOF
-- [x] Snapshot before sanitize and before each refine phase
-- [x] ≥1 verified restore on target hosting environment
-
-## GATES
-- [x] Produce GATE table + FINAL verdict
+## VERIFY
+- [x] Run production gate (php lint + duplicate funcs + secret scan + CSP) → PASS
+- [x] Verify .env loader behavior (precedence, quotes, spaces)
+- [x] Final consistency scan

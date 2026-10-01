@@ -1,10 +1,88 @@
 <?php
 /**
- * Bamero production wp-config — fail-closed secrets (SEC-01..04).
- * WPLANG removed (SEC-04).
+ * Bamero production wp-config — fail-closed secrets.
+ *
+ * Secrets are resolved with this precedence:
+ *   1. Real environment variables (hosting panel / PHP-FPM pool / .htaccess SetEnv)
+ *   2. A .env file OUTSIDE the web root (recommended): ../bamero.env or ../.env
+ *   3. A .env file INSIDE the web root (blocked from HTTP by .htaccess)
+ *
+ * Copy .env.example to .env, fill in every value, then upload it. NEVER commit a
+ * real .env. The site refuses to boot (HTTP 500) if a required value is missing
+ * or is still a placeholder — this prevents an insecure half-configured launch.
  */
 
 declare(strict_types=1);
+
+/** Absolute path to the WordPress directory. */
+if (!defined('ABSPATH')) {
+    define('ABSPATH', __DIR__ . '/');
+}
+
+/**
+ * Minimal .env loader so the site boots on shared PHP hosting that cannot set
+ * real environment variables. Existing env vars always take precedence.
+ */
+function bamero_load_env_file(): void {
+    $candidates = array();
+
+    if (defined('BAMERO_ENV_FILE')) {
+        $candidates[] = (string) BAMERO_ENV_FILE;
+    }
+
+    // Preferred: one level above the web root (not reachable over HTTP).
+    $candidates[] = dirname(ABSPATH) . '/bamero.env';
+    $candidates[] = dirname(ABSPATH) . '/.env';
+
+    // Fallback: inside the web root (protected by .htaccess FilesMatch rule).
+    $candidates[] = ABSPATH . '.env';
+
+    foreach ($candidates as $file) {
+        if (!is_string($file) || $file === '' || !is_readable($file)) {
+            continue;
+        }
+
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) {
+            continue;
+        }
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) {
+                continue;
+            }
+
+            list($key, $value) = explode('=', $line, 2);
+            $key   = trim($key);
+            $value = trim($value);
+
+            if ($key === '') {
+                continue;
+            }
+
+            // Strip a single pair of surrounding quotes.
+            $len = strlen($value);
+            if ($len >= 2) {
+                $first = $value[0];
+                $last  = $value[$len - 1];
+                if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                    $value = substr($value, 1, -1);
+                }
+            }
+
+            if (getenv($key) === false || getenv($key) === '') {
+                putenv($key . '=' . $value);
+                $_ENV[$key]    = $value;
+                $_SERVER[$key] = $value;
+            }
+        }
+
+        return; // use the first readable file only
+    }
+}
+
+bamero_load_env_file();
 
 /**
  * Require non-empty env; reject known placeholders. Uses die() before WP loads.
@@ -46,9 +124,22 @@ $table_prefix = (getenv('TABLE_PREFIX') !== false && getenv('TABLE_PREFIX') !== 
     ? getenv('TABLE_PREFIX')
     : 'wp_bamero_';
 
+/**
+ * Optional: pin the site domain via env so the owner can set it without editing
+ * the database. Leave unset to use the values stored in wp_options.
+ */
+$bamero_home = getenv('WP_HOME');
+if ($bamero_home !== false && $bamero_home !== '') {
+    define('WP_HOME', rtrim($bamero_home, '/'));
+}
+$bamero_siteurl = getenv('WP_SITEURL');
+if ($bamero_siteurl !== false && $bamero_siteurl !== '') {
+    define('WP_SITEURL', rtrim($bamero_siteurl, '/'));
+}
+
 define('WP_DEBUG', filter_var(getenv('WP_DEBUG') !== false ? getenv('WP_DEBUG') : '0', FILTER_VALIDATE_BOOLEAN));
 define('WP_DEBUG_DISPLAY', false);
-define('WP_DEBUG_LOG', filter_var(getenv('WP_DEBUG_LOG') !== false ? getenv('WP_DEBUG_LOG') : '1', FILTER_VALIDATE_BOOLEAN));
+define('WP_DEBUG_LOG', filter_var(getenv('WP_DEBUG_LOG') !== false ? getenv('WP_DEBUG_LOG') : '0', FILTER_VALIDATE_BOOLEAN));
 
 define('DISALLOW_FILE_EDIT', true);
 $dfm = getenv('DISALLOW_FILE_MODS');
@@ -66,10 +157,6 @@ define('WP_MAX_MEMORY_LIMIT', '512M');
 $env_type = getenv('WP_ENVIRONMENT_TYPE');
 if ($env_type !== false && $env_type !== '') {
     define('WP_ENVIRONMENT_TYPE', $env_type);
-}
-
-if (!defined('ABSPATH')) {
-    define('ABSPATH', __DIR__ . '/');
 }
 
 require_once ABSPATH . 'wp-settings.php';

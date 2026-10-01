@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Bamero Essential Plugins
- * Plugin URI: https://github.com/mojirt37/refactored-octo-waddle
+ * Plugin URI: https://github.com/Mojim62/Rang
  * Description: Administrator-controlled installer for Bamero's WordPress.org plugin recommendations.
  * Version: 1.1.0
- * Author: Moji Moji
- * Author URI: https://github.com/mojirt37
+ * Author: Bamero
+ * Author URI: https://github.com/Mojim62/Rang
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
  * Text Domain: bamero-essential-plugins

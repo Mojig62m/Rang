@@ -9,8 +9,8 @@ defined('ABSPATH') || exit;
 
 get_header();
 
-$phone   = get_theme_mod('bamero_phone_number', '۰۹۱۳۴۲۹۲۳۲۹');
-$address = get_theme_mod('bamero_address', 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه');
+$phone   = bamero_phone_display();
+$address = bamero_address_display();
 ?>
 
 <main id="main-content" class="contact-page" tabindex="-1">
@@ -29,7 +29,7 @@ $address = get_theme_mod('bamero_address', 'اصفهان، خیابان خرم،
                 </li>
                 <li>
                     <strong><?php echo esc_html__('تلفن:', 'bamero'); ?></strong>
-                    <a href="tel:<?php echo esc_attr(preg_replace('/[^0-9+]/', '', $phone)); ?>"><?php echo esc_html($phone); ?></a>
+                    <a href="tel:<?php echo esc_attr(bamero_phone_e164()); ?>"><?php echo esc_html($phone); ?></a>
                 </li>
                 <li>
                     <strong><?php echo esc_html__('ساعات کاری:', 'bamero'); ?></strong>
