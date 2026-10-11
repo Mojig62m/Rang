@@ -86,7 +86,7 @@ ck E7 "coverage calculator Persian strings preserved"   'grep -qF "مساحت ر
 
 echo
 echo "[F] Governance and documentation"
-ck F1 "go-live document family present"   'for d in GO_LIVE_VERIFICATION_REPORT.md GO_LIVE_RUNBOOK_FA.md GO_LIVE_PHP_HOSTING_FA.md DEPLOY_QUICKSTART_FA.md FAST_TRACK_DEPLOY_FA.md UI_UX_GOLIVE_AUDIT_2026-10.md THEME_GOLIVE_HARDENING_2026-10.md; do [ -f "$ROOT/$d" ] || exit 1; done'
+ck F1 "go-live document family present"   'for d in GO_LIVE_VERIFICATION_REPORT.md GO_LIVE_RUNBOOK_FA.md GO_LIVE_PHP_HOSTING_FA.md DEPLOY_QUICKSTART_FA.md UI_UX_GOLIVE_AUDIT_2026-10.md THEME_GOLIVE_HARDENING_2026-10.md; do [ -f "$ROOT/$d" ] || exit 1; done'
 ck F2 "theme README present"   '[ -f "$THEME/README.md" ]'
 ck F3 "make certify target wired"   'grep -q "^certify:" "$ROOT/Makefile"'
 

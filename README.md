@@ -72,7 +72,6 @@ Rang/
 ├── .github/workflows/            # CI استاتیک + فشرده‌سازی خودکار تصاویر (pngquant)
 ├── .github/dependabot.yml        # پایش دوره‌ای وابستگی‌ها
 ├── README.md                     # مستندات پروژه
-├── FAST_TRACK_DEPLOY_FA.md      # مسیر استقرار سریع ۳۰ دقیقه‌ای
 ├── GO_LIVE_PHP_HOSTING_FA.md     # راهنمای گام‌به‌گام استقرار روی هاست PHP
 ├── docs/                         # ADR معماری + مدل تهدید (از استقرار عمومی مستثناست)
 ├── tests/                        # گیت‌های CI + دود-تست استیجینگ (staging_smoke.php)

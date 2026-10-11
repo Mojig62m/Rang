@@ -268,12 +268,12 @@ function bamero_check_woocommerce() {
  */
 function bamero_check_bamero_plugins() {
     $bamero_plugins = array(
-        'bamero-mobile-auth/bamero-mobile-auth.php',
         'bamero-production-core/bamero-production-core.php',
+        'bamero-mobile-auth/bamero-mobile-auth.php',
         'bamero-zarinpal-gateway/bamero-zarinpal-gateway.php',
-        'bamero-sms-provider/bamero-sms-provider.php',
-        'bamero-notifications/bamero-notifications.php',
-        'bamero-iran-shipping/bamero-iran-shipping.php',
+        'bamero-woocommerce-setup/bamero-woocommerce-setup.php',
+        'bamero-custom-plugin/bamero-custom-plugin.php',
+        'bamero-essential-plugins/bamero-essential-plugins.php',
     );
     
     $active_plugins = get_option('active_plugins', array());
@@ -488,11 +488,11 @@ function bamero_check_required_pages() {
     );
     
     $bamero_pages = array(
-        'color-consultation' => get_page_by_path('color-consultation'),
-        'about-us' => get_page_by_path('about-us'),
-        'contact-us' => get_page_by_path('contact-us'),
-        'privacy-policy' => get_page_by_path('privacy-policy'),
-        'terms-of-service' => get_page_by_path('terms-of-service'),
+        'consultation' => get_page_by_path('consultation'),
+        'about' => get_page_by_path('about'),
+        'contact' => get_page_by_path('contact'),
+        'privacy' => get_page_by_path('privacy'),
+        'terms' => get_page_by_path('terms'),
     );
     
     $missing = array();
