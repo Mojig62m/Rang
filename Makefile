@@ -1,4 +1,3 @@
-# =============================================================================
 # Bamero Makefile - Common Development and Deployment Commands
 # =============================================================================
 # Usage:
@@ -13,7 +12,7 @@
 #   make docker-down    - Stop Docker containers
 # =============================================================================
 
-.PHONY: help install setup test certify db-backup db-restore reset docker-up docker-down
+.PHONY: help install setup test certify launch-gate db-backup db-restore reset docker-up docker-down
 
 # =============================================================================
 # Help
@@ -36,6 +35,9 @@ help:
 	@echo "    Deployment runs exclusively via the GitHub pipeline"
 	@echo "    (build-once artifact -> staging -> production approval)."
 	@echo "    See docs/DEPLOYMENT_PIPELINE_FA.md"
+	@echo ""
+	@echo "  Launch day (runtime gate):"
+	@echo "    make launch-gate BASE_URL=https://دامنه - گیت اجرایی روز راه‌اندازی (گواهی آمادگی عملیاتی)"
 	@echo ""
 	@echo "  Docker:"
 	@echo "    make docker-up      - Start Docker containers"
@@ -93,6 +95,13 @@ setup: install
 certify:
 	@echo "🔹 Running go-live certification suite..."
 	bash tests/go_live_certification.sh
+
+# =============================================================================
+# Launch-Day Runtime Gate (operational readiness certificate)
+# =============================================================================
+launch-gate:
+	@echo "🔹 Launch-day runtime gate..."
+	bash scripts/launch-day-gate.sh $(BASE_URL) $(GATE_ARGS)
 
 # =============================================================================
 # Run Tests

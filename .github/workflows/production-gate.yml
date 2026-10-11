@@ -1,4 +1,3 @@
-name: Bamero production gate
 on:
   pull_request:
   push:
@@ -22,7 +21,7 @@ jobs:
       - name: Shell syntax check (all shell scripts)
         run: find scripts tests -type f -name '*.sh' -print0 | xargs -0 -n1 bash -n
       - name: ShellCheck on the release pipeline (errors only)
-        run: shellcheck --severity=error scripts/build-release.sh scripts/deploy-release.sh scripts/verify-deployment.sh scripts/rollback-release.sh
+        run: shellcheck --severity=error scripts/build-release.sh scripts/deploy-release.sh scripts/verify-deployment.sh scripts/rollback-release.sh scripts/launch-day-gate.sh
       - name: Workflow YAML sanity
         run: |
           ruby -ryaml -e 'Dir[".github/workflows/*.yml"].sort.each { |f| YAML.safe_load(File.read(f)); puts "YAML OK: " + f }'
@@ -33,6 +32,11 @@ jobs:
           mkdir -p artifact
           set -o pipefail
           bash tests/go_live_certification.sh | tee artifact/go-live-certification.txt
+      - name: Operational readiness certification (static)
+        run: |
+          mkdir -p artifact
+          set -o pipefail
+          bash tests/operational_readiness_certification.sh | tee artifact/operational-readiness.txt
       - name: Immutable artifact manifest
         run: |
           mkdir -p artifact

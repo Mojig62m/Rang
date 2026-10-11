@@ -1,4 +1,3 @@
-# رانبوک راه‌اندازی حرفه‌ای فروشگاه بامرو (Go-Live Runbook)
 
 این سند لایهٔ عملیاتی روی مستندات موجود است: راهنمای میزبانی (GO_LIVE_PHP_HOSTING_FA.md)، خط لولهٔ استقرار (docs/DEPLOYMENT_PIPELINE_FA.md) و مانیتورینگ (docs/HOSTING_OPTIONS_FA.md). هدف: کمترین خطا در روز راه‌اندازی واقعی.
 
@@ -125,6 +124,14 @@ cookie: wordpress_logged_in_*   woocommerce_items_in_cart*   wp-postpass_*
 8. Core Web Vitals: تست PageSpeed موبایل صفحهٔ اصلی + یک صفحهٔ محصول (هدف: LCP زیر ۲٫۵ ثانیه).
 9. ثبت sitemap در Google Search Console و Bing؛ robots.txt پویا.
 10. توییت/اعلام عمومی فقط بعد از همهٔ مراحل قبل.
+
+**اجرای ماشین‌خوان این بخش:** پس از تأیید همهٔ مراحل بالا، کل چک‌لیست را با گیت اجرایی اثبات و خروجی سبز آن را به‌عنوان گواهی ثبت کنید:
+
+```bash
+bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALTH_TOKEN"
+```
+
+فقط پس از اجرای واقعی و ثبت شواهد چهار گیت دستی (M1 پرداخت واقعی، M2 تحویل SMS، M3 جریان End-to-End، M4 Core Web Vitals) پرچم `--confirm-manual` را اضافه کنید؛ گیت بدون آن با شکست متوقف می‌شود (fail-closed). شرح کامل در OPERATIONAL_READINESS_FA.md.
 
 معیارهای بازگشت فوری (rollback):
 - verify شکست بخورد؛

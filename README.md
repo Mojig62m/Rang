@@ -1,4 +1,3 @@
-# فروشگاه اینترنتی بامرو
 
 ## توضیحات
 
@@ -79,6 +78,7 @@ Rang/
 ├── scripts/deploy-release.sh      # استقرار artifact روی host از طریق SSH (fail-closed؛ GitHub Actions اجرا می‌کند)
 ├── scripts/verify-deployment.sh   # راستی‌آزمایی HTTP پس از استقرار
 ├── scripts/rollback-release.sh    # بازگشت به release قبلی (فقط تغییر symlink؛ بدون rebuild و بدون تغییر DB)
+├── scripts/launch-day-gate.sh    # گیت اجرایی روز راه‌اندازی (گواهی آمادگی عملیاتی)
 └── wp-content/
     ├── uploads/.htaccess         # ممنوعیت اجرای PHP در پوشهٔ آپلود
     ├── themes/
@@ -158,6 +158,17 @@ wp eval-file tests/staging_smoke.php
 ```
 این تست ارز **ریال (IRR)**، کاتالوگ ۲۰ محصولی، درگاه زرین‌پال، جدول اعلان‌های پایگاه‌داده و صفحات حقوقی را بررسی می‌کند.
 
+### گیت روز راه‌اندازی (روی محیط واقعی)
+
+پس از استقرار روی production، آمادگی عملیاتی را با گیت اجرایی اثبات کنید:
+
+```bash
+bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALTH_TOKEN"
+# یا معادل آن: make launch-gate BASE_URL=https://دامنه
+```
+
+این گیت ریدایرکت HTTPS، صفحات کلیدی، robots.txt و اندپوینت سلامت (بدون توکن: ۴۰۳) را روی محیط واقعی بررسی می‌کند و بدون تأیید چهار گیت دستی M1 تا M4 با شکست متوقف می‌شود (fail-closed). شرح کامل: [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md).
+
 ### تست عملکرد
 - [GTmetrix](https://gtmetrix.com/)
 - [PageSpeed Insights](https://pagespeed.web.dev/)
@@ -179,6 +190,7 @@ wp eval-file tests/staging_smoke.php
 
 برای اطلاعات بیشتر، به فایل‌های زیر مراجعه کنید:
 - [GO_LIVE_PHP_HOSTING_FA.md](GO_LIVE_PHP_HOSTING_FA.md) - راهنمای استقرار روی هاست PHP
+- [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md) - گواهی آمادگی عملیاتی: سوئیت ۳۱چکی CI + گیت اجرایی روز راه‌اندازی
 - [docs/HOSTING_OPTIONS_FA.md](docs/HOSTING_OPTIONS_FA.md) - مقایسهٔ راهکارهای هاستینگ و مسیر پر-اتوماسیون (۲۰۲۶-۱۰)
 - [docs/DEPLOYMENT_PIPELINE_FA.md](docs/DEPLOYMENT_PIPELINE_FA.md) - معماری پایپ‌لاین استقرار (build-once، promotion، rollback)
 - [UI_UX_GOLIVE_AUDIT_2026-10.md](UI_UX_GOLIVE_AUDIT_2026-10.md) - گزارش ممیزی UI/UX و سازگاری ووکامرس
