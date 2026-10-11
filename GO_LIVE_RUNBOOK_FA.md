@@ -126,6 +126,14 @@ cookie: wordpress_logged_in_*   woocommerce_items_in_cart*   wp-postpass_*
 9. ثبت sitemap در Google Search Console و Bing؛ robots.txt پویا.
 10. توییت/اعلام عمومی فقط بعد از همهٔ مراحل قبل.
 
+**اجرای ماشین‌خوان این بخش:** پس از تأیید همهٔ مراحل بالا، کل چک‌لیست را با گیت اجرایی اثبات و خروجی سبز آن را به‌عنوان گواهی ثبت کنید:
+
+```bash
+bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALTH_TOKEN"
+```
+
+فقط پس از اجرای واقعی و ثبت شواهد چهار گیت دستی (M1 پرداخت واقعی، M2 تحویل SMS، M3 جریان End-to-End، M4 Core Web Vitals) پرچم `--confirm-manual` را اضافه کنید؛ گیت بدون آن با شکست متوقف می‌شود (fail-closed). شرح کامل در OPERATIONAL_READINESS_FA.md.
+
 معیارهای بازگشت فوری (rollback):
 - verify شکست بخورد؛
 - تست پرداخت واقعی شکست بخورد یا سفارش پرداختی ثبت نشود؛

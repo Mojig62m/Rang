@@ -36,8 +36,7 @@
 - **محروم کردن دسترسی** به فایل‌های حساس (wp-config.php, xmlrpc.php).
 - **غیرفعال کردن ویرایش فایل‌ها** از پنل مدیریت.
 - **غیرفعال کردن XML-RPC** برای جلوگیری از حملات Brute Force.
-- **مخفی کردن ورژن WordPress** برای کاهش خطرات امنیت
-ی.
+- **مخفی کردن ورژن WordPress** برای کاهش خطرات امنیتی.
 - **هدرهای امنیتی** و **CSP با nonce** برای اسکریپت‌ها.
 
 ### ✅ ویژگی‌های عملکرد
@@ -72,7 +71,6 @@ Rang/
 ├── .github/workflows/            # CI استاتیک + فشرده‌سازی خودکار تصاویر (pngquant)
 ├── .github/dependabot.yml        # پایش دوره‌ای وابستگی‌ها
 ├── README.md                     # مستندات پروژه
-├── FAST_TRACK_DEPLOY_FA.md      # مسیر استقرار سریع ۳۰ دقیقه‌ای
 ├── GO_LIVE_PHP_HOSTING_FA.md     # راهنمای گام‌به‌گام استقرار روی هاست PHP
 ├── docs/                         # ADR معماری + مدل تهدید (از استقرار عمومی مستثناست)
 ├── tests/                        # گیت‌های CI + دود-تست استیجینگ (staging_smoke.php)
@@ -80,12 +78,12 @@ Rang/
 ├── scripts/deploy-release.sh      # استقرار artifact روی host از طریق SSH (fail-closed؛ GitHub Actions اجرا می‌کند)
 ├── scripts/verify-deployment.sh   # راستی‌آزمایی HTTP پس از استقرار
 ├── scripts/rollback-release.sh    # بازگشت به release قبلی (فقط تغییر symlink؛ بدون rebuild و بدون تغییر DB)
+├── scripts/launch-day-gate.sh    # گیت اجرایی روز راه‌اندازی (گواهی آمادگی عملیاتی)
 └── wp-content/
     ├── uploads/.htaccess         # ممنوعیت اجرای PHP در پوشهٔ آپلود
     ├── themes/
     │   └── bamero/               # تم سفارشی بامرو
-    │       ├── css/           
-   # متغیرها، آیکون‌ها، استایل‌ها، WooCommerce و RTL
+    │       ├── css/              # متغیرها، آیکون‌ها، استایل‌ها، WooCommerce و RTL
     │       ├── js/               # اسکریپت‌های اصلی
     │       ├── images/           # لوگو و فاوآیکون
     │       ├── assets/fonts/     # فونت Vazirmatn (woff2 + مجوز OFL)
@@ -130,8 +128,7 @@ cp .env.example .env
 
 ### 5. فعال‌سازی تم و افزونه‌ها
 - تم **بامرو** را فعال کنید.
-- افزونه‌های همراه را فعال کنید: `bamero-production-
-core`، `bamero-mobile-auth`، `bamero-zarinpal-gateway`، `bamero-woocommerce-setup`، `bamero-custom-plugin`، `bamero-essential-plugins`.
+- افزونه‌های همراه را فعال کنید: `bamero-production-core`، `bamero-mobile-auth`، `bamero-zarinpal-gateway`، `bamero-woocommerce-setup`، `bamero-custom-plugin`، `bamero-essential-plugins`.
 - WooCommerce و سایر افزونه‌های پیشنهادی را نصب کنید.
 
 ### 6. پیکربندی نهایی
@@ -159,6 +156,17 @@ wp eval-file tests/staging_smoke.php
 ```
 این تست ارز **ریال (IRR)**، کاتالوگ ۲۰ محصولی، درگاه زرین‌پال، جدول اعلان‌های پایگاه‌داده و صفحات حقوقی را بررسی می‌کند.
 
+### گیت روز راه‌اندازی (روی محیط واقعی)
+
+پس از استقرار روی production، آمادگی عملیاتی را با گیت اجرایی اثبات کنید:
+
+```bash
+bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALTH_TOKEN"
+# یا معادل آن: make launch-gate BASE_URL=https://دامنه
+```
+
+این گیت ریدایرکت HTTPS، صفحات کلیدی، robots.txt و اندپوینت سلامت (بدون توکن: ۴۰۳) را روی محیط واقعی بررسی می‌کند و بدون تأیید چهار گیت دستی M1 تا M4 با شکست متوقف می‌شود (fail-closed). شرح کامل: [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md).
+
 ### تست عملکرد
 - [GTmetrix](https://gtmetrix.com/)
 - [PageSpeed Insights](https://pagespeed.web.dev/)
@@ -180,13 +188,13 @@ wp eval-file tests/staging_smoke.php
 
 برای اطلاعات بیشتر، به فایل‌های زیر مراجعه کنید:
 - [GO_LIVE_PHP_HOSTING_FA.md](GO_LIVE_PHP_HOSTING_FA.md) - راهنمای استقرار روی هاست PHP
+- [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md) - گواهی آمادگی عملیاتی: سوئیت ۳۱چکی CI + گیت اجرایی روز راه‌اندازی
 - [docs/HOSTING_OPTIONS_FA.md](docs/HOSTING_OPTIONS_FA.md) - مقایسهٔ راهکارهای هاستینگ و مسیر پر-اتوماسیون (۲۰۲۶-۱۰)
 - [docs/DEPLOYMENT_PIPELINE_FA.md](docs/DEPLOYMENT_PIPELINE_FA.md) - معماری پایپ‌لاین استقرار (build-once، promotion، rollback)
 - [UI_UX_GOLIVE_AUDIT_2026-10.md](UI_UX_GOLIVE_AUDIT_2026-10.md) - گزارش ممیزی UI/UX و سازگاری ووکامرس
 - [SECURITY.md](SECURITY.md) - سیاست امنیتی و گزارش آسیب‌پذیری
 - [LICENSE](LICENSE) - متن مجوز MIT
-- [docs/adrs/0001-architecture.md](docs/adrs/0001-architec
-ture.md) - تصمیمات معماری (ADR)
+- [docs/adrs/0001-architecture.md](docs/adrs/0001-architecture.md) - تصمیمات معماری (ADR)
 - [docs/wp-threat-model.md](docs/wp-threat-model.md) - مدل تهدید امنیتی
 - [wp-content/themes/bamero/README.md](wp-content/themes/bamero/README.md) - مستندات تم
 

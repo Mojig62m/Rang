@@ -25,6 +25,20 @@
 **نتیجهٔ بازبینی:** هر پنج سند Go-Live تأیید می‌شوند؛ تنها همین گزارش برای هم‌راستاسازی با ممیزی UI/UX به نسخهٔ ۱.۱.۰ ارتقا یافت. آمادگی Go-Live در سطح کد، پیکربندی و CI: سبز و کامل. گیت‌های باقی‌مانده صرفاً runtime هستند و مطابق GO_LIVE_RUNBOOK_FA.md بخش ۹ در روز راه‌اندازی اجرا می‌شوند.
 
 
+
+## 🧹 بازبینی v1.2.0 (۲۰۲۶-۱۰-۱۱) — پاکسازی مسیرهای مرده و گواهی آمادگی عملیاتی
+
+تحلیل ارجاعی کامل مخزن چهار فایل را به‌عنوان زائد یا تضادآلود اثبات کرد و حذف آن‌ها در شاخهٔ fix/operational-readiness انجام شد:
+
+| فایل حذف‌شده | دلیل اثبات‌شده | جایگزین canonical |
+|---|---|---|
+| scripts/deploy.sh | استقرار دستی با git pull روی production و نصب با نام کاربری/رمز پیش‌فرض admin — ناقض قانون طلایی «استقرار فقط از طریق پایپ‌لاین، آرتیفکت یک‌بار-ساخت» | scripts/deploy-release.sh (پایپ‌لاین GitHub) |
+| scripts/rollback.sh | بازگشت با git-checkout به کامیت hard-code و restore دیتابیس از بکاپ تخمینی — ناقض اصل «همان artifact قبلی، بدون rebuild و بدون تغییر DB» | scripts/rollback-release.sh (تعویض symlink فقط) |
+| scripts/validate.sh | همپوشان کامل با سوئیت تأییدیهٔ استاتیک و سه‌گانهٔ تست runtime؛ هیچ ارجاعی در اسناد canonical نداشت | tests/go_live_certification.sh + گیت روز راه‌اندازی |
+| FAST_TRACK_DEPLOY_FA.md | نسخهٔ فشردهٔ تکراری GO_LIVE_PHP_HOSTING_FA.md؛ مسیر آن (git clone مستقیم در web root) دقیقاً الگویی است که سایر اسناد به‌صراحت ممنوع می‌کنند | GO_LIVE_PHP_HOSTING_FA.md + DEPLOY_QUICKSTART_FA.md |
+
+همچنین دو نقص اثبات‌شده در نقطهٔ سلامت production (health-check.php) رفع شد: فهرست افزونه‌های فانتوم (سه افزونهٔ ناموجود در مخزن) با شش افزونهٔ واقعی جایگزین شد و اسلاگ صفحات الزامی با اسلاگ‌های افزونهٔ سازندهٔ صفحات بامرو هم‌راستا شد. گواهی آمادگی عملیاتی جدید: [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md).
+
 ## ✅ فهرست تاییدات
 
 ### 1. 🔍 آنالیز و اصلاح نقص‌های کد (5 نقص اصلی)
@@ -56,8 +70,7 @@
 - ✅ درباره ما
 - ✅ تماس با ما
 - ✅ حریم خصوصی
-- ✅ شرایط استفا
-ده
+- ✅ شرایط استفاده
 
 **نتیجه:** تمام صفحات و جدول‌های مورد نیاز وجود دارند. ✅
 
@@ -119,9 +132,9 @@ grep -r "پیش‌فاکتور\|پیش فاکتور\|pre-invoice" --include="*.p
 
 | فایل | اندازه | شرح |
 |------|--------|------|
-| `scripts/deploy.sh` | 11.4 KB | خودکارسازی کامل استقرار |
-| `scripts/validate.sh` | 14.1 KB | اعتبارسنجی پیش از Go-Live |
-| `scripts/rollback.sh` | 7.8 KB | بازگشت اضطراری |
+| `scripts/build-release.sh` | 2.9 KB | سازندهٔ canonical بستهٔ استقرار (یگانه) |
+| `scripts/deploy-release.sh` | 7.1 KB | ترویج artifact از طریق SSH (fail-closed؛ فقط پایپ‌لاین) |
+| `scripts/rollback-release.sh` | 1.6 KB | بازگشت با تعویض symlink (بدون rebuild و بدون تغییر DB) |
 | `health-check.php` | 17.6 KB | مانیتورینگ runtime |
 | `Makefile` | 9.3 KB | دستورات مختصر |
 | `docker-compose.yml` | 5.6 KB | محیط توسعه محلی |
@@ -234,8 +247,7 @@ grep -r "پیش‌فاکتور\|پیش فاکتور\|pre-invoice" --include="*.p
 
 ## 📝 چک‌لیست نهایی Go-Live
 
-- [x] W
-ordPress/PHP/WooCommerce نسخه تاییدشده
+- [x] WordPress/PHP/WooCommerce نسخه تاییدشده
 - [x] افزونه‌های بامرو سالم
 - [x] IRR / ایران / اصفهان
 - [x] موجودی فعال
@@ -280,14 +292,11 @@ ordPress/PHP/WooCommerce نسخه تاییدشده
 ### دستورات استقرار
 
 ```bash
-# استقرار کامل
-make deploy
+# تأییدیهٔ استاتیک Go-Live (۳۶ چک)
+make certify
 
-# اعتبارسنجی
-make validate
-
-# بازگشت اضطراری
-make rollback
+# گیت روز راه‌اندازی (پس از استقرار؛ نیازمند BASE_URL)
+make launch-gate BASE_URL=https://دامنه
 
 # بررسی سلامت
 make health
@@ -302,10 +311,10 @@ make logs
 
 - [GO_LIVE_PHP_HOSTING_FA.md](GO_LIVE_PHP_HOSTING_FA.md) - راهنمای میزبانی PHP
 - [DEPLOY_QUICKSTART_FA.md](DEPLOY_QUICKSTART_FA.md) - راهنمای سریع استقرار
-- [FAST_TRACK_DEPLOY_FA.md](FAST_TRACK_DEPLOY_FA.md) - استقرار سریع
 - [UI_UX_GOLIVE_AUDIT_2026-10.md](UI_UX_GOLIVE_AUDIT_2026-10.md) - ممیزی و پاکسازی UI/UX پیش از Go-Live
 - [THEME_GOLIVE_HARDENING_2026-10.md](THEME_GOLIVE_HARDENING_2026-10.md) - سخت‌سازی نهایی تم بامرو برای Go-Live (تم ۲.۲.۰، شاخهٔ fix/theme-golive-hardening)
 - [GO_LIVE_CERTIFICATION_FA.md](GO_LIVE_CERTIFICATION_FA.md) - تأییدیهٔ رسمی Go-Live با سوئیت تأییدیهٔ استاتیک ۳۶چکی در گیت CI
+- [OPERATIONAL_READINESS_FA.md](OPERATIONAL_READINESS_FA.md) - گواهی آمادگی عملیاتی: سوئیت ۳۱چکی CI + گیت اجرایی روز راه‌اندازی
 
 ---
 
