@@ -1,3 +1,4 @@
+# فروشگاه اینترنتی بامرو
 
 ## توضیحات
 
@@ -35,8 +36,7 @@
 - **محروم کردن دسترسی** به فایل‌های حساس (wp-config.php, xmlrpc.php).
 - **غیرفعال کردن ویرایش فایل‌ها** از پنل مدیریت.
 - **غیرفعال کردن XML-RPC** برای جلوگیری از حملات Brute Force.
-- **مخفی کردن ورژن WordPress** برای کاهش خطرات امنیت
-ی.
+- **مخفی کردن ورژن WordPress** برای کاهش خطرات امنیتی.
 - **هدرهای امنیتی** و **CSP با nonce** برای اسکریپت‌ها.
 
 ### ✅ ویژگی‌های عملکرد
@@ -83,8 +83,7 @@ Rang/
     ├── uploads/.htaccess         # ممنوعیت اجرای PHP در پوشهٔ آپلود
     ├── themes/
     │   └── bamero/               # تم سفارشی بامرو
-    │       ├── css/           
-   # متغیرها، آیکون‌ها، استایل‌ها، WooCommerce و RTL
+    │       ├── css/              # متغیرها، آیکون‌ها، استایل‌ها، WooCommerce و RTL
     │       ├── js/               # اسکریپت‌های اصلی
     │       ├── images/           # لوگو و فاوآیکون
     │       ├── assets/fonts/     # فونت Vazirmatn (woff2 + مجوز OFL)
@@ -129,8 +128,7 @@ cp .env.example .env
 
 ### 5. فعال‌سازی تم و افزونه‌ها
 - تم **بامرو** را فعال کنید.
-- افزونه‌های همراه را فعال کنید: `bamero-production-
-core`، `bamero-mobile-auth`، `bamero-zarinpal-gateway`، `bamero-woocommerce-setup`، `bamero-custom-plugin`، `bamero-essential-plugins`.
+- افزونه‌های همراه را فعال کنید: `bamero-production-core`، `bamero-mobile-auth`، `bamero-zarinpal-gateway`، `bamero-woocommerce-setup`، `bamero-custom-plugin`، `bamero-essential-plugins`.
 - WooCommerce و سایر افزونه‌های پیشنهادی را نصب کنید.
 
 ### 6. پیکربندی نهایی
@@ -196,8 +194,7 @@ bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALT
 - [UI_UX_GOLIVE_AUDIT_2026-10.md](UI_UX_GOLIVE_AUDIT_2026-10.md) - گزارش ممیزی UI/UX و سازگاری ووکامرس
 - [SECURITY.md](SECURITY.md) - سیاست امنیتی و گزارش آسیب‌پذیری
 - [LICENSE](LICENSE) - متن مجوز MIT
-- [docs/adrs/0001-architecture.md](docs/adrs/0001-architec
-ture.md) - تصمیمات معماری (ADR)
+- [docs/adrs/0001-architecture.md](docs/adrs/0001-architecture.md) - تصمیمات معماری (ADR)
 - [docs/wp-threat-model.md](docs/wp-threat-model.md) - مدل تهدید امنیتی
 - [wp-content/themes/bamero/README.md](wp-content/themes/bamero/README.md) - مستندات تم
 

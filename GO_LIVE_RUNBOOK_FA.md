@@ -1,3 +1,4 @@
+# رانبوک راه‌اندازی حرفه‌ای فروشگاه بامرو (Go-Live Runbook)
 
 این سند لایهٔ عملیاتی روی مستندات موجود است: راهنمای میزبانی (GO_LIVE_PHP_HOSTING_FA.md)، خط لولهٔ استقرار (docs/DEPLOYMENT_PIPELINE_FA.md) و مانیتورینگ (docs/HOSTING_OPTIONS_FA.md). هدف: کمترین خطا در روز راه‌اندازی واقعی.
 

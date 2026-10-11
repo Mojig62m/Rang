@@ -54,7 +54,7 @@ ck V1 "post-deploy HTTP checks cover wp-json/shop/cart/my-account"   'grep -q "/
 ck V2 "PHP error detection in rendered pages"   'grep -q "Fatal error" "$VERIFY_SH"'
 ck V3 "transient network failures retried"   'grep -q -- "--retry 3" "$VERIFY_SH"'
 ck V4 "nightly monitor scheduled and wired to verification"   'grep -q "schedule:" "$MONITOR_YML" && grep -q "verify-deployment.sh" "$MONITOR_YML"'
-ck V5 "monitor failures open a tracking issue"   'grep -qF "if: ${{ failure() }}" "$MONITOR_YML"'
+ck V5 "monitor failures open a tracking issue"   'grep -qF "if: \${{ failure() }}" "$MONITOR_YML"'
 ck V6 "fail-closed health endpoint + token contract"   'grep -q "http_response_code(403)" "$HEALTH_PHP" && grep -q "BAMERO_HEALTH_TOKEN" "$ROOT/.env.example"'
 ck V7 "runtime test trio present (health/seed/smoke)"   'for t in health_check.php staging_smoke.php seed_validation.php; do [ -f "$ROOT/tests/$t" ] || exit 1; done'
 

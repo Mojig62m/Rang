@@ -1,3 +1,4 @@
+name: Bamero production gate
 on:
   pull_request:
   push:

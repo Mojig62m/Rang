@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Bamero go-live certification — static acceptance suite (2026-10).
 # Referenced by .github/workflows/production-gate.yml.
