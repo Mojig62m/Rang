@@ -120,7 +120,7 @@ bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALT
 
 | اجرا | SHA | نتیجه |
 |---|---|---|
-| PR #39 (گواهی آمادگی عملیاتی) | — | پس از اجرای سبز PR اینجا ثبت می‌شود |
+| PR #39 (گواهی آمادگی عملیاتی) | 57fa0a8 | سبز — static-production-gate موفق، OPERATIONAL READINESS: PASS (31/31 checks)؛ [اجرای CI](https://github.com/Mojim62/Rang/actions/runs/38126477219)؛ گزارش کامل به‌عنوان artifact عرضه شد |
 
 ## ۸. جمع‌بندی و امضا
 
