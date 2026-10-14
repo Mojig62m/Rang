@@ -24,7 +24,7 @@ $address = bamero_address_display();
             <h2><?php echo esc_html__('اطلاعات تماس', 'bamero'); ?></h2>
             <ul>
                 <li>
-                    <strong><?php echo esc_html__('آدرس:', 'bamero'); ?></strong>
+                    <strong><?php echo esc_html__('نشانی:', 'bamero'); ?></strong>
                     <?php echo esc_html($address); ?>
                 </li>
                 <li>
@@ -33,13 +33,27 @@ $address = bamero_address_display();
                 </li>
                 <li>
                     <strong><?php echo esc_html__('ساعات کاری:', 'bamero'); ?></strong>
-                    <?php echo esc_html__('شنبه تا چهارشنبه ۸–۱۷ | پنجشنبه ۸–۱۴', 'bamero'); ?>
+                    <?php echo esc_html__('شنبه تا چهارشنبه ۸ تا ۱۷ | پنج‌شنبه ۸ تا ۱۴', 'bamero'); ?>
                 </li>
             </ul>
         </div>
 
         <div class="contact-form">
             <h2><?php echo esc_html__('فرم تماس', 'bamero'); ?></h2>
+            <?php
+            $bamero_contact_status   = isset($_GET['contact_status']) ? sanitize_key(wp_unslash($_GET['contact_status'])) : '';
+            $bamero_contact_messages = array(
+                'success'      => array('class' => 'woocommerce-message', 'text' => __('پیام شما با موفقیت ارسال شد. به‌زودی با شما تماس می‌گیریم.', 'bamero')),
+                'error'        => array('class' => 'woocommerce-error', 'text' => __('ارسال پیام ممکن نشد. لطفاً دوباره تلاش کنید.', 'bamero')),
+                'invalid'      => array('class' => 'woocommerce-error', 'text' => __('لطفاً همهٔ فیلدها را به‌درستی تکمیل کنید.', 'bamero')),
+                'rate_limited' => array('class' => 'woocommerce-error', 'text' => __('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.', 'bamero')),
+            );
+            if (isset($bamero_contact_messages[$bamero_contact_status])) :
+            ?>
+            <div class="<?php echo esc_attr($bamero_contact_messages[$bamero_contact_status]['class']); ?>" role="status">
+                <?php echo esc_html($bamero_contact_messages[$bamero_contact_status]['text']); ?>
+            </div>
+            <?php endif; ?>
             <p class="form-help" id="contact-help"><?php echo esc_html__('برای پاسخ‌گویی و پیگیری، شمارهٔ موبایل معتبر وارد کنید. پاسخ از طریق پیامک انجام می‌شود.', 'bamero'); ?></p>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="bamero-contact-form">
                     <?php wp_nonce_field('bamero_contact', 'bamero_contact_nonce'); ?>
@@ -49,7 +63,7 @@ $address = bamero_address_display();
                         <input type="text" id="c-name" name="name" required autocomplete="name">
                     </p>
                     <p>
-                        <label for="c-phone"><?php echo esc_html__('شماره موبایل', 'bamero'); ?> <span aria-hidden="true">*</span></label>
+                        <label for="c-phone"><?php echo esc_html__('شمارهٔ موبایل', 'bamero'); ?> <span aria-hidden="true">*</span></label>
                         <input type="tel" id="c-phone" name="phone" required inputmode="tel" autocomplete="tel" aria-describedby="contact-help" placeholder="۰۹۱۲۱۲۳۴۵۶۷">
                     </p>
                     <p>

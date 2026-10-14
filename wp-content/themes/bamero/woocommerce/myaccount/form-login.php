@@ -19,7 +19,7 @@ defined('ABSPATH') || exit;
     } else {
         // Fail visible rather than silently showing a password form.
         echo '<p class="woocommerce-info" role="status">'
-            . esc_html__('ورود با شماره موبایل در دسترس نیست. افزونه احراز هویت موبایل را فعال کنید.', 'bamero')
+            . esc_html__('ورود با شمارهٔ موبایل در حال حاضر در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.', 'bamero')
             . '</p>';
     }
     ?>

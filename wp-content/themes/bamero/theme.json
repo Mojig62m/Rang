@@ -19,10 +19,11 @@
     "color": {
       "custom": false,
       "palette": [
-        { "name": "Ink", "slug": "ink", "color": "#152238" },
-        { "name": "Brand", "slug": "brand", "color": "#0057B8" },
-        { "name": "Accent", "slug": "accent", "color": "#F4A300" },
-        { "name": "Surface", "slug": "surface", "color": "#F8F9FA" },
+        { "name": "Ink", "slug": "ink", "color": "#0F172A" },
+        { "name": "Brand", "slug": "brand", "color": "#4338CA" },
+        { "name": "Accent", "slug": "accent", "color": "#F59E0B" },
+        { "name": "Warm", "slug": "warm", "color": "#C2410C" },
+        { "name": "Surface", "slug": "surface", "color": "#F8FAFC" },
         { "name": "White", "slug": "white", "color": "#ffffff" }
       ]
     },
@@ -30,7 +31,7 @@
       "customFontSize": false,
       "fluid": true,
       "fontFamilies": [
-        { "fontFamily": "Vazirmatn, sans-serif", "slug": "brand" }
+        { "fontFamily": "Estedad, Vazirmatn, sans-serif", "slug": "brand" }
       ],
       "fontSizes": [
         { "name": "Small", "slug": "sm", "size": "0.875rem" },
@@ -43,7 +44,7 @@
   "styles": {
     "typography": { "fontFamily": "var(--wp--preset--font-family--brand)", "lineHeight": "1.7" },
     "elements": {
-      "button": { "border": { "radius": "0.625rem" }, "typography": { "fontWeight": "700" } },
+      "button": { "border": { "radius": "0.75rem" }, "typography": { "fontWeight": "700" } },
       "link": { "color": { "text": "var(--wp--preset--color--brand)" } }
     }
   }

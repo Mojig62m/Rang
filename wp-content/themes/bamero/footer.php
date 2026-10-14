@@ -13,14 +13,14 @@ $address = bamero_address_display();
     <div class="footer-grid">
         <div>
             <h3><?php echo esc_html__('بامرو', 'bamero'); ?></h3>
-            <p><?php echo esc_html__('رنگ و چسب بامرو — تأمین رنگ ساختمانی، صنعتی، ضدآب و چسب با مشاوره فنی در اصفهان.', 'bamero'); ?></p>
+            <p><?php echo esc_html__('رنگ و چسب بامرو — تأمین رنگ ساختمانی، صنعتی، ضدآب و چسب با مشاورهٔ فنی در اصفهان.', 'bamero'); ?></p>
         </div>
         <div>
             <h3><?php echo esc_html__('دسترسی سریع', 'bamero'); ?></h3>
             <ul>
                 <li><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html__('خانه', 'bamero'); ?></a></li>
                 <li><a href="<?php echo esc_url(function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/shop/')); ?>"><?php echo esc_html__('فروشگاه', 'bamero'); ?></a></li>
-                <li><a href="<?php echo esc_url(home_url('/about/')); ?>"><?php echo esc_html__('درباره ما', 'bamero'); ?></a></li>
+                <li><a href="<?php echo esc_url(home_url('/about/')); ?>"><?php echo esc_html__('دربارهٔ ما', 'bamero'); ?></a></li>
                 <li><a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php echo esc_html__('تماس با ما', 'bamero'); ?></a></li>
             </ul>
         </div>
@@ -38,7 +38,7 @@ $address = bamero_address_display();
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; <?php echo esc_html(wp_date('Y')); ?> <?php echo esc_html__('بامرو — همه حقوق محفوظ است.', 'bamero'); ?></p>
+        <p>&copy; <?php echo esc_html(wp_date('Y')); ?> <?php echo esc_html__('بامرو — تمامی حقوق محفوظ است.', 'bamero'); ?></p>
     </div>
 </footer>
 <a href="#main-content" class="scroll-to-top" aria-label="<?php echo esc_attr__('بازگشت به بالای صفحه', 'bamero'); ?>">

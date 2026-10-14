@@ -165,10 +165,12 @@ function bamero_scripts() {
 add_action('wp_enqueue_scripts', 'bamero_scripts');
 
 function bamero_preload_primary_font() {
-    if (is_front_page() || is_product()) {
-        $font_path = BAMERO_THEME_PATH . '/assets/fonts/Vazirmatn-wght.woff2';
+    if (is_front_page() || (function_exists('is_product') && is_product())) {
+        // Estedad is the primary brand face; Vazirmatn stays only as a CSS fallback
+        // and is therefore not preloaded (avoids a wasted high-priority request).
+        $font_path = BAMERO_THEME_PATH . '/assets/fonts/Estedad-wght.woff2';
         if (is_readable($font_path)) {
-            printf('<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>\n', esc_url(BAMERO_THEME_DIR . '/assets/fonts/Vazirmatn-wght.woff2'));
+            printf('<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>\n', esc_url(BAMERO_THEME_DIR . '/assets/fonts/Estedad-wght.woff2'));
         }
     }
 }
@@ -192,7 +194,7 @@ add_action('wp_enqueue_scripts', 'bamero_maybe_enqueue_add_to_cart', 20);
 // Add body classes
 function bamero_body_classes($classes) {
     $classes[] = 'rtl';
-    if (is_woocommerce()) {
+    if (function_exists('is_woocommerce') && is_woocommerce()) {
         $classes[] = 'woocommerce-page';
     }
     return $classes;

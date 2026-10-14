@@ -114,8 +114,16 @@ function bamero_security_headers() {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
-    header('Content-Security-Policy: default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-ancestors \'self\'; form-action \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=(), usb=()');
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('X-Permitted-Cross-Domain-Policies: none');
+    $csp = 'default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-src \'none\'; frame-ancestors \'self\'; form-action \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;';
+    // HTTPS-only directives: never sent over plain http (local/staging stay usable).
+    if (is_ssl()) {
+        $csp .= ' upgrade-insecure-requests;';
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+    }
+    header('Content-Security-Policy: ' . $csp);
 }
 }
 add_action('send_headers', 'bamero_security_headers', 1);
@@ -374,35 +382,52 @@ function bamero_notification_schema_validate($template_key, array $payload) {
     return array('template_key' => $template, 'mobile' => $mobile);
 }
 
+/** Outbox schema version: bump whenever the CREATE TABLE below changes. */
+if (!defined('BAMERO_OUTBOX_DB_VERSION')) {
+    define('BAMERO_OUTBOX_DB_VERSION', '2');
+}
+
+/**
+ * Create/upgrade the notification outbox table.
+ * dbDelta() formatting rules are respected so upgrades actually apply: one
+ * column/key per line, two spaces after PRIMARY KEY, KEY instead of INDEX,
+ * and lowercase column types exactly as WordPress' own schema.
+ */
 function bamero_install_notification_outbox() {
     global $wpdb;
     $table = bamero_notification_table_name();
     $charset = $wpdb->get_charset_collate();
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     $sql = "CREATE TABLE {$table} (
-        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-        order_id bigint(20) unsigned NOT NULL DEFAULT 0,
-        user_id bigint(20) unsigned NOT NULL DEFAULT 0,
-        template_key varchar(80) NOT NULL,
-        payload_hash char(64) NOT NULL,
-        status varchar(20) NOT NULL DEFAULT 'pending',
-        retry_count smallint unsigned NOT NULL DEFAULT 0,
-        max_retries smallint unsigned NOT NULL DEFAULT 5,
-        provider_message_id varchar(191) NOT NULL DEFAULT '',
-        idempotency_key char(64) NOT NULL,
-        payload_ciphertext longtext NOT NULL,
-        payload_expires_at datetime NULL,
-        last_error_code varchar(80) NOT NULL DEFAULT '',
-        last_error_at datetime NULL,
-        correlation_id char(36) NOT NULL,
-        scheduled_at datetime NOT NULL,
-        locked_at datetime NULL,
-        created_at datetime NOT NULL,
-        updated_at datetime NOT NULL,
-        PRIMARY KEY (id), UNIQUE KEY idem (idempotency_key), KEY status_schedule (status, scheduled_at), KEY order_id (order_id)
-    ) {$charset};";
+  id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  order_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  template_key varchar(80) NOT NULL,
+  payload_hash char(64) NOT NULL,
+  status varchar(20) NOT NULL DEFAULT 'pending',
+  retry_count smallint(5) unsigned NOT NULL DEFAULT 0,
+  max_retries smallint(5) unsigned NOT NULL DEFAULT 5,
+  provider_message_id varchar(191) NOT NULL DEFAULT '',
+  idempotency_key char(64) NOT NULL,
+  payload_ciphertext longtext NOT NULL,
+  payload_expires_at datetime NULL,
+  last_error_code varchar(80) NOT NULL DEFAULT '',
+  last_error_at datetime NULL,
+  correlation_id char(36) NOT NULL,
+  scheduled_at datetime NOT NULL,
+  locked_at datetime NULL,
+  created_at datetime NOT NULL,
+  updated_at datetime NOT NULL,
+  PRIMARY KEY  (id),
+  UNIQUE KEY idem (idempotency_key),
+  KEY status_schedule (status,scheduled_at),
+  KEY status_updated (status,updated_at),
+  KEY order_id (order_id),
+  KEY created_at (created_at)
+) {$charset};";
     dbDelta($sql);
     update_option('bamero_notification_outbox_installed', 'yes', true);
+    update_option('bamero_notification_outbox_db_version', BAMERO_OUTBOX_DB_VERSION, true);
 }
 register_activation_hook(__FILE__, 'bamero_install_notification_outbox');
 add_action('after_switch_theme', 'bamero_install_notification_outbox');
@@ -410,11 +435,13 @@ add_action('activated_plugin', 'bamero_install_notification_outbox');
 
 /**
  * Deploy-order safety net: guarantee the outbox table exists no matter in
- * which order theme/plugins were activated. Cheap option check; runs on
- * admin requests and before every worker run.
+ * which order theme/plugins were activated, and run dbDelta() once per schema
+ * version bump (never on every request). Cheap autoloaded option check; runs
+ * on admin requests and before every worker run.
  */
 function bamero_ensure_notification_outbox() {
-    if (get_option('bamero_notification_outbox_installed') !== 'yes') {
+    if (get_option('bamero_notification_outbox_installed') !== 'yes'
+        || (string) get_option('bamero_notification_outbox_db_version') !== BAMERO_OUTBOX_DB_VERSION) {
         bamero_install_notification_outbox();
     }
 }
@@ -521,6 +548,25 @@ function bamero_process_notification_outbox($limit = 20) {
     }
 }
 add_action('bamero_notification_worker', 'bamero_process_notification_outbox');
+
+/**
+ * Data retention: at most once a day, drop finalized (sent/failed) rows older
+ * than 30 days and blank the encrypted payload of finalized rows (never
+ * re-sent). Keeps the table small and limits stored PII.
+ */
+function bamero_purge_notification_outbox() {
+    if (get_transient('bamero_outbox_purged')) {
+        return;
+    }
+    set_transient('bamero_outbox_purged', 1, DAY_IN_SECONDS);
+    global $wpdb;
+    $table = bamero_notification_table_name();
+    $cutoff = gmdate('Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS);
+    // Finalized rows are never re-sent, so their sealed payload is no longer needed.
+    $wpdb->query($wpdb->prepare("UPDATE {$table} SET payload_ciphertext = %s WHERE status IN ('sent','failed') AND payload_ciphertext <> %s LIMIT %d", '', '', 1000));
+    $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE status IN ('sent','failed') AND updated_at < %s LIMIT %d", $cutoff, 1000));
+}
+add_action('bamero_notification_worker', 'bamero_purge_notification_outbox', 20);
 add_filter('cron_schedules', function($schedules) { $schedules['minute'] = array('interval' => 60, 'display' => 'Every minute'); return $schedules; });
 function bamero_schedule_notification_worker() { if (!wp_next_scheduled('bamero_notification_worker')) wp_schedule_event(time() + 60, 'minute', 'bamero_notification_worker'); }
 add_action('init', 'bamero_schedule_notification_worker', 20);

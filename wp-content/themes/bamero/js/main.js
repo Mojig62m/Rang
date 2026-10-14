@@ -92,7 +92,7 @@
                 resultEl.textContent = coverage > 0 ? 'مساحت را وارد کنید.' : 'پوشش‌دهی محصول ثبت نشده است.';
                 return;
             }
-            resultEl.textContent = 'مقدار تقریبی: ' + (area / coverage * 1.1).toFixed(1) + ' لیتر با ضریب اطمینان ۱۰٪';
+            resultEl.textContent = 'مقدار تقریبی: ' + (area / coverage * 1.1).toFixed(1) + ' لیتر (با احتساب ۱۰٪ ضریب اطمینان)';
         });
     }
 
