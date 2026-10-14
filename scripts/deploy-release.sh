@@ -131,7 +131,7 @@ unzip -qo bamero-release.zip
 sha256sum -c SHA256SUMS
 # B2 remediation: fail-closed core check — the release dir must be a COMPLETE
 # docroot. The artifact ships wp-config/.htaccess/wp-content but NOT WP core.
-if [ ! -f wp-config.php ] || [ ! -f wp-includes/wp-load.php ]; then
+if [ ! -f wp-config.php ] || [ ! -f wp-load.php ] || [ ! -d wp-includes ]; then
     echo "DEPLOY ABORT: release dir is not a complete WordPress docroot (missing wp-config.php or wp-includes/). Extract the WP fa_IR core into releases/$RELEASE_TAG first (GO_LIVE_PHP_HOSTING_FA.md section 2), or copy it from the previous release dir. Refusing to switch current to an incomplete docroot." >&2
     exit 1
 fi

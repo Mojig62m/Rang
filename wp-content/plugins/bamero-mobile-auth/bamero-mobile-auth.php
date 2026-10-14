@@ -175,11 +175,6 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
     $phone = $schema['phone'];
     $otp = preg_replace('/\D+/', '', (string) $otp_raw);
 
-    $data = get_transient(bamero_otp_transient_key($phone));
-    if (!$data || empty($data['hash'])) {
-        return new WP_Error('otp_expired', __('کد منقضی شده است. دوباره درخواست دهید.', 'bamero-mobile-auth'));
-    }
-
     // H3: serialize the attempt counter per phone with a MySQL named lock so
     // concurrent submissions can never exceed MAX_ATTEMPTS (same pattern as
     // bamero_request_otp).
@@ -191,6 +186,12 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
     }
 
     try {
+        // S3: read the OTP state only while holding the lock.
+        $data = get_transient(bamero_otp_transient_key($phone));
+        if (!$data || empty($data['hash'])) {
+            return new WP_Error('otp_expired', __('کد منقضی شده است. دوباره درخواست دهید.', 'bamero-mobile-auth'));
+        }
+
         $attempts = isset($data['attempts']) ? (int) $data['attempts'] : 0;
         if ($attempts >= BAMERO_MOBILE_AUTH_MAX_ATTEMPTS) {
             set_transient('bamero_otp_lock_' . md5($phone), 1, BAMERO_MOBILE_AUTH_LOCKOUT);
@@ -203,12 +204,12 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
             set_transient(bamero_otp_transient_key($phone), $data, BAMERO_MOBILE_AUTH_OTP_TTL);
             return new WP_Error('otp_mismatch', __('کد تأیید اشتباه است.', 'bamero-mobile-auth'));
         }
+
+        delete_transient(bamero_otp_transient_key($phone));
+        return array('phone' => $phone, 'context' => isset($data['context']) ? $data['context'] : 'login');
     } finally {
         $wpdb->query($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $verify_lock));
     }
-
-    delete_transient(bamero_otp_transient_key($phone));
-    return array('phone' => $phone, 'context' => isset($data['context']) ? $data['context'] : 'login');
 }
 
 /**
@@ -379,6 +380,14 @@ function bamero_handle_verify_otp() {
     // login
     if (!$user) {
         wp_safe_redirect(add_query_arg('bamero_auth', 'not_registered', $redirect));
+        exit;
+    }
+    // S4: never allow OTP login for privileged accounts.
+    if (user_can($user, 'manage_options') || user_can($user, 'manage_woocommerce') || user_can($user, 'edit_others_posts')) {
+        if (function_exists('bamero_log_event')) {
+            bamero_log_event('otp_privileged_denied', array('user_id' => (int) $user->ID));
+        }
+        wp_safe_redirect(add_query_arg('bamero_auth', 'not_allowed', $redirect));
         exit;
     }
     bamero_login_user($user->ID);

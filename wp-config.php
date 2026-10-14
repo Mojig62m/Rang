@@ -114,8 +114,7 @@ function bamero_require_env(string $key): string {
 
 define('DB_NAME', bamero_require_env('DB_NAME'));
 define('DB_USER', bamero_require_env('DB_USER'));
-define('DB_PASSWORD', bamero_require_env('DB_PASSWO
-RD'));
+define('DB_PASSWORD', bamero_require_env('DB_PASSWORD'));
 define('DB_HOST', bamero_require_env('DB_HOST'));
 define('DB_CHARSET', 'utf8mb4');
 define('DB_COLLATE', '');
@@ -169,8 +168,7 @@ define('DISABLE_WP_CRON', filter_var($bamero_disable_cron !== false ? $bamero_di
 define('EMPTY_TRASH_DAYS', 14);
 define('WP_POST_REVISIONS', 5);
 define('AUTOSAVE_INTERVAL', 120);
-define('WP_MEMORY_LIM
-IT', '256M');
+define('WP_MEMORY_LIMIT', '256M');
 define('WP_MAX_MEMORY_LIMIT', '512M');
 
 $env_type = getenv('WP_ENVIRONMENT_TYPE');

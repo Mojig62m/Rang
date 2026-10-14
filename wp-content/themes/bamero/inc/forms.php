@@ -60,6 +60,12 @@ function bamero_process_color_consultation() {
         wp_die(esc_html__('درخواست نامعتبر است. لطفاً دوباره تلاش کنید.', 'bamero'), '', array('response' => 403));
     }
 
+    // S5: per-IP rate limit (bamero_rate_limit returns false when over the limit).
+    if (function_exists('bamero_rate_limit') && !bamero_rate_limit('consultation_form', 3, HOUR_IN_SECONDS)) {
+        wp_safe_redirect(add_query_arg('consultation_status', 'rate_limited', wp_get_referer() ? wp_get_referer() : home_url('/')));
+        exit;
+    }
+
     $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
     $phone = isset($_POST['phone']) ? sanitize_text_field(wp_unslash($_POST['phone'])) : '';
     $phone = function_exists('bamero_normalize_ir_mobile') ? bamero_normalize_ir_mobile($phone) : preg_replace('/\D+/', '', $phone);
@@ -86,6 +92,12 @@ add_action('admin_post_nopriv_bamero_color_consultation', 'bamero_process_color_
 function bamero_process_contact_submit() {
     if (!isset($_POST['bamero_contact_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_contact_nonce'])), 'bamero_contact')) {
         wp_die(esc_html__('درخواست نامعتبر است.', 'bamero'), '', array('response' => 403));
+    }
+
+    // S5: per-IP rate limit (bamero_rate_limit returns false when over the limit).
+    if (function_exists('bamero_rate_limit') && !bamero_rate_limit('contact_form', 3, HOUR_IN_SECONDS)) {
+        wp_safe_redirect(add_query_arg('contact_status', 'rate_limited', wp_get_referer() ? wp_get_referer() : home_url('/')));
+        exit;
     }
 
     $name    = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
