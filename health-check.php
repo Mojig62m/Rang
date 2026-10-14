@@ -43,10 +43,8 @@ function bamero_health_check() {
     $token = isset($_GET['token']) ? sanitize_text_field(wp_unslash($_GET['token'])) : '';
     $env_token = (string) getenv(BAMERO_HEALTH_CHECK_TOKEN);
     
-    // Allow health check without token in development
-    $is_development = in_array(wp_get_environment_type(), array('development', 'staging', 'local'), true);
-    
-    if (empty($env_token) && !$is_development) {
+    // Token is required in every environment (fail-closed).
+    if (empty($env_token)) {
         http_response_code(403);
         echo wp_json_encode(array(
             'status' => 'error',
@@ -56,7 +54,7 @@ function bamero_health_check() {
         exit;
     }
     
-    if (!hash_equals($env_token, $token) && !$is_development) {
+    if (!hash_equals($env_token, $token)) {
         http_response_code(403);
         echo wp_json_encode(array(
             'status' => 'error',
