@@ -1,6 +1,6 @@
 # راهکارهای هاستینگ و استقرار — بامرو (۲۰۲۶-۱۰)
 
-این سند گزینه‌های استقرار فروشگاه را مقایسه می‌کند و مسیر پر-اتوماسیون (پایپ‌لاین موجود مخزن) را گام‌به‌گام توضیح می‌دهد. اصول: یک artifact یک‌بار ساخته می‌شود (`scripts/build-release.sh`)، همان artifact با checksum به staging و production ترویج می‌شود، و هر gate شکست‌خورده کل زنجیره را متوقف می‌کند (fail-closed). جزئیات معماری در [`docs/DEPLOYMENT_PIPELINE_FA.md`](DEPLOYMENT_PIPELINE_FA.md).
+این سند گزینه‌های استقرار فروشگاه را مقایسه می‌کند و مسیر پر-اتوماسیون (پایپ‌لاین موجود مخزن) را گام‌به‌گام توضیح می‌دهد. اصول: یک artifact یک‌بار ساخته می‌شود (`scripts/build-release.sh`)، همان artifact با checksum به staging و production ترویج می‌شود، و هر gate شکست‌خورده کل زنجیره را متوقف می‌کند (fail-closed). جزئیات معماری در [`docs/DEPLOYMENT_PIPELINE_FA.md`](/docs/DEPLOYMENT_PIPELINE_FA).
 
 ## مقایسهٔ سریع
 

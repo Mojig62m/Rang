@@ -49,7 +49,7 @@
 | 2 | شمارنده‌های rate-limit عمومی بدون قفل | ✅ **اصلاح شده** | `GET_LOCK` در `bamero_rate_limit()` پیاده‌سازی شده | کم | [کد خط 43-52](wp-content/plugins/bamero-production-core/bamero-production-core.php) |
 | 3 | timeout سشن در هر درخواست user_meta می‌نوشت | ✅ **بهینه‌سازی شده** | کش ترنزینت برای `bamero_last_activity` پیاده‌سازی شد | عملکردی | [کد خط 314-321](wp-content/plugins/bamero-production-core/bamero-production-core.php) |
 | 4 | جستجوی سفارش در callback با meta_query | ✅ **بهینه‌سازی شده** | کش ترنزینت برای authority→order_id پیاده‌سازی شد | عملکردی | [کد خط 235-238](wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php) |
-| 5 | پرداخت و SMS فقط در staging قابل اثبات | ✅ **پرچم‌های محیطی اضافه شد** | `BAMERO_ENABLE_PAYMENT_IN_STAGING` و `BAMERO_ENABLE_SMS_IN_STAGING` | - | [Zarinpal](wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php:51-61) / [SMS.ir](wp-content/plugins/bamero-production-core/bamero-production-core.php:477-481) |
+| 5 | پرداخت و SMS فقط در staging قابل اثبات | ✅ **پرچم‌های محیطی اضافه شد** | `BAMERO_ENABLE_PAYMENT_IN_STAGING` و `BAMERO_ENABLE_SMS_IN_STAGING` | - | Zarinpal: `wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php:50-61` / SMS.ir: `wp-content/plugins/bamero-production-core/bamero-production-core.php:466-470` |
 
 **نتیجه:** تمام 5 نقص اصلی در سطح کد اصلاح شده‌اند. ⚡
 
