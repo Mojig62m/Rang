@@ -91,8 +91,9 @@ defined('ABSPATH') || exit;
                 ?>
                 <ul>
                     <li><a href="<?php echo esc_url(home_url('/')); ?>"><?php echo esc_html__('خانه', 'bamero'); ?></a></li>
-                    <li><a href="<?php echo esc_url(home_url('/about/')); ?>"><?php echo esc_html__('درباره ما', 'bamero'); ?></a></li>
-                    <li class="current-menu-item"><a href="<?php echo esc_url($shop_url); ?>" aria-current="page"><?php echo esc_html__('فروشگاه', 'bamero'); ?></a></li>
+                    <li><a href="<?php echo esc_url(home_url('/about/')); ?>"><?php echo esc_html__('دربارهٔ ما', 'bamero'); ?></a></li>
+                    <?php $bamero_is_shop = function_exists('is_shop') && is_shop(); ?>
+                    <li<?php echo $bamero_is_shop ? ' class="current-menu-item"' : ''; ?>><a href="<?php echo esc_url($shop_url); ?>"<?php echo $bamero_is_shop ? ' aria-current="page"' : ''; ?>><?php echo esc_html__('فروشگاه', 'bamero'); ?></a></li>
                     <li><a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php echo esc_html__('تماس', 'bamero'); ?></a></li>
                 </ul>
                 <?php
@@ -101,10 +102,10 @@ defined('ABSPATH') || exit;
         </nav>
 
         <form class="header-search" role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>">
-            <label class="screen-reader-text" for="bamero-header-search"><?php echo esc_html__('جستجوی محصولات', 'bamero'); ?></label>
-            <input id="bamero-header-search" type="search" name="s" value="<?php echo esc_attr(get_search_query()); ?>" placeholder="جستجوی محصول یا کد رنگ" />
+            <label class="screen-reader-text" for="bamero-header-search"><?php echo esc_html__('جست‌وجوی محصولات', 'bamero'); ?></label>
+            <input id="bamero-header-search" type="search" name="s" value="<?php echo esc_attr(get_search_query()); ?>" placeholder="جست‌وجوی محصول یا کد رنگ" />
             <input type="hidden" name="post_type" value="product" />
-            <button type="submit" aria-label="<?php echo esc_attr__('جستجو', 'bamero'); ?>">
+            <button type="submit" aria-label="<?php echo esc_attr__('جست‌وجو', 'bamero'); ?>">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
             </button>
         </form>
@@ -120,12 +121,12 @@ defined('ABSPATH') || exit;
 <div class="nav-backdrop" id="nav-backdrop" hidden></div>
 
 <?php if (!is_admin()) : ?>
-<div class="bamero-mobile-search" role="region" aria-label="<?php echo esc_attr__('جستجوی محصولات', 'bamero'); ?>">
+<div class="bamero-mobile-search" role="region" aria-label="<?php echo esc_attr__('جست‌وجوی محصولات', 'bamero'); ?>">
     <form role="search" method="get" action="<?php echo esc_url(home_url('/')); ?>">
-        <label class="screen-reader-text" for="bamero-mobile-search-input"><?php echo esc_html__('جستجوی محصولات', 'bamero'); ?></label>
-        <input id="bamero-mobile-search-input" type="search" name="s" value="<?php echo esc_attr(get_search_query()); ?>" placeholder="جستجوی محصول یا کد رنگ" enterkeyhint="search" autocomplete="off" />
+        <label class="screen-reader-text" for="bamero-mobile-search-input"><?php echo esc_html__('جست‌وجوی محصولات', 'bamero'); ?></label>
+        <input id="bamero-mobile-search-input" type="search" name="s" value="<?php echo esc_attr(get_search_query()); ?>" placeholder="جست‌وجوی محصول یا کد رنگ" enterkeyhint="search" autocomplete="off" />
         <input type="hidden" name="post_type" value="product" />
-        <button type="submit" aria-label="<?php echo esc_attr__('جستجو', 'bamero'); ?>">
+        <button type="submit" aria-label="<?php echo esc_attr__('جست‌وجو', 'bamero'); ?>">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
         </button>
     </form>

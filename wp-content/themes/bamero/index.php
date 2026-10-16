@@ -18,7 +18,7 @@ get_header();
 // Contextual, human-readable heading for the current view.
 if (is_search()) {
     /* translators: %s: search query */
-    $bamero_title = sprintf(__('نتایج جستجو برای: %s', 'bamero'), get_search_query());
+    $bamero_title = sprintf(__('نتایج جست‌وجو برای: %s', 'bamero'), get_search_query());
 } elseif (is_archive()) {
     $bamero_title = wp_strip_all_tags(get_the_archive_title());
 } elseif (is_home() && !is_front_page()) {
@@ -66,7 +66,7 @@ if (is_search()) {
                             <?php the_excerpt(); ?>
                         </div>
                         <a class="button" href="<?php the_permalink(); ?>">
-                            <?php echo esc_html__('ادامه مطلب', 'bamero'); ?>
+                            <?php echo esc_html__('ادامهٔ مطلب', 'bamero'); ?>
                         </a>
                     </article>
                     <?php
@@ -86,10 +86,10 @@ if (is_search()) {
 
             <div class="bamero-empty-state text-center">
                 <h2><?php echo esc_html__('موردی یافت نشد', 'bamero'); ?></h2>
-                <p><?php echo esc_html__('چیزی مطابق جستجوی شما پیدا نشد. می‌توانید عبارت دیگری را امتحان کنید یا از فروشگاه بازدید کنید.', 'bamero'); ?></p>
+                <p><?php echo esc_html__('موردی مطابق جست‌وجوی شما پیدا نشد. می‌توانید عبارت دیگری را امتحان کنید یا از فروشگاه بازدید کنید.', 'bamero'); ?></p>
                 <?php get_search_form(); ?>
                 <a class="button" href="<?php echo esc_url(function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/')); ?>">
-                    <?php echo esc_html__('بازگشت به فروشگاه', 'bamero'); ?>
+                    <?php echo esc_html__('مشاهدهٔ فروشگاه', 'bamero'); ?>
                 </a>
             </div>
 

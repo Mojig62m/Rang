@@ -23,13 +23,13 @@ function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
             'Add to cart' => 'افزودن به سبد خرید',
             'Shop' => 'فروشگاه',
             'Cart' => 'سبد خرید',
-            'Checkout' => 'تسویه حساب',
+            'Checkout' => 'تسویه‌حساب',
             'My Account' => 'حساب کاربری',
             'Related products' => 'محصولات مرتبط',
             'Description' => 'توضیحات',
             'Additional information' => 'اطلاعات بیشتر',
             'Reviews' => 'نظرات',
-            'Search' => 'جستجو',
+            'Search' => 'جست‌وجو',
             'Categories' => 'دسته‌بندی‌ها',
             'Filter by price' => 'فیلتر بر اساس قیمت',
             'Price: Low to High' => 'قیمت: ارزان به گران',
@@ -41,19 +41,19 @@ function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
             'Sort by price: high to low' => 'مرتب‌سازی بر اساس قیمت: گران به ارزان',
             'In stock' => 'موجود',
             'Out of stock' => 'ناموجود',
-            'Add to wishlist' => 'افزودن به لیست علاقه‌مندی',
-            'Remove from wishlist' => 'حذف از لیست علاقه‌مندی',
-            'Your wishlist' => 'لیست علاقه‌مندی شما',
-            'No products in the wishlist' => 'هیچ محصولی در لیست علاقه‌مندی وجود ندارد',
-            'Proceed to checkout' => 'ادامه جهت پرداخت',
+            'Add to wishlist' => 'افزودن به فهرست علاقه‌مندی‌ها',
+            'Remove from wishlist' => 'حذف از فهرست علاقه‌مندی‌ها',
+            'Your wishlist' => 'فهرست علاقه‌مندی‌های شما',
+            'No products in the wishlist' => 'هیچ محصولی در فهرست علاقه‌مندی‌ها وجود ندارد',
+            'Proceed to checkout' => 'ادامه و تسویه‌حساب',
             'Update cart' => 'به‌روزرسانی سبد خرید',
             'Cart totals' => 'جمع سبد خرید',
             'Subtotal' => 'جمع جزء',
             'Total' => 'جمع کل',
-            'Shipping' => 'هزینه ارسال',
+            'Shipping' => 'هزینهٔ ارسال',
             'Free shipping' => 'ارسال رایگان',
-            'Billing details' => 'جزئیات فاکتور',
-            'Shipping details' => 'جزئیات ارسال',
+            'Billing details' => 'مشخصات صورت‌حساب',
+            'Shipping details' => 'مشخصات ارسال',
             'Payment method' => 'روش پرداخت',
             'Order notes' => 'یادداشت‌های سفارش',
             'Place order' => 'ثبت سفارش',
@@ -64,10 +64,10 @@ function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
             'Remove' => 'حذف',
             'Apply coupon' => 'اعمال کد تخفیف',
             'Coupon code' => 'کد تخفیف',
-            'Enter your coupon code if you have one' => 'اگر کد تخفیف دارید، وارد کنید',
-            'Coupon has been applied successfully' => 'کد تخفیف با موفقیت اعمال شد',
-            'Sorry, this coupon does not exist' => 'متأسفانه این کد تخفیف معتبر نیست',
-            'Please enter a coupon code' => 'لطفاً کد تخفیف را وارد کنید',
+            'Enter your coupon code if you have one' => 'اگر کد تخفیف دارید، آن را وارد کنید.',
+            'Coupon has been applied successfully' => 'کد تخفیف با موفقیت اعمال شد.',
+            'Sorry, this coupon does not exist' => 'متأسفانه این کد تخفیف معتبر نیست.',
+            'Please enter a coupon code' => 'لطفاً کد تخفیف را وارد کنید.',
             );
         }
 
@@ -102,7 +102,7 @@ function bamero_add_custom_product_fields() {
         'label' => 'اطلاعات اضافی',
         'placeholder' => 'اطلاعات اضافی محصول را وارد کنید.',
         'desc_tip' => true,
-        'description' => 'اطلاعات اضافی در مورد محصول.',
+        'description' => 'اطلاعات تکمیلی دربارهٔ محصول.',
     ));
 
     foreach (array(
@@ -209,20 +209,20 @@ function bamero_product_specs_tab_content() {
 }
 
 function bamero_product_application_tab_content() {
-    echo '<div class="bamero-application-guide"><p><strong>آماده‌سازی:</strong> سطح باید تمیز، خشک و عاری از چربی و گردوغبار باشد.</p><p><strong>ابزار:</strong> قلم‌مو، غلتک یا پیستوله متناسب با نوع محصول.</p><p><strong>شرایط اجرا:</strong> دمای محیط و سطح مطابق دیتاشیت رسمی محصول باشد.</p></div>';
+    echo '<div class="bamero-application-guide"><p><strong>آماده‌سازی:</strong> سطح باید تمیز، خشک و عاری از چربی و گردوغبار باشد.</p><p><strong>ابزار:</strong> قلم‌مو، غلتک یا پیستوله متناسب با نوع محصول.</p><p><strong>شرایط اجرا:</strong> دمای محیط و سطح باید مطابق برگهٔ مشخصات فنی (دیتاشیت) محصول باشد.</p></div>';
 }
 
 function bamero_product_safety_tab_content() {
     $url = bamero_product_meta_value('_bamero_msds_url', '');
-    echo '<div class="bamero-safety-guide"><p>پیش از مصرف، برچسب محصول و دستورالعمل ایمنی را مطالعه کنید. دور از دسترس کودک و دور از حرارت نگهداری شود.</p>';
-    if ($url !== '') echo '<p><a class="button" href="' . esc_url($url) . '" target="_blank" rel="noopener">دریافت برگه MSDS</a></p>';
+    echo '<div class="bamero-safety-guide"><p>پیش از مصرف، برچسب محصول و دستورالعمل ایمنی را مطالعه کنید. دور از دسترس کودکان و منابع حرارتی نگهداری شود.</p>';
+    if ($url !== '') echo '<p><a class="button" href="' . esc_url($url) . '" target="_blank" rel="noopener">دریافت برگهٔ MSDS</a></p>';
     echo '</div>';
 }
 
 function bamero_coverage_calculator() {
     if (!is_product()) return;
     $coverage = (float) bamero_product_meta_value('_bamero_coverage', '0');
-    echo '<section class="bamero-coverage-calculator" aria-labelledby="bamero-coverage-title"><h3 id="bamero-coverage-title">ماشین‌حساب مقدار مورد نیاز</h3><p>مساحت سطح را وارد کنید؛ ضریب اطمینان ۱۰٪ در محاسبه لحاظ می‌شود.</p><label for="bamero-area">مساحت (مترمربع)</label><input id="bamero-area" type="number" min="0" step="0.1" inputmode="decimal"><output id="bamero-coverage-result" data-coverage="' . esc_attr((string) $coverage) . '" aria-live="polite">پوشش‌دهی محصول ثبت نشده است.</output></section>';
+    echo '<section class="bamero-coverage-calculator" aria-labelledby="bamero-coverage-title"><h3 id="bamero-coverage-title">ماشین‌حساب مقدار مورد نیاز</h3><p>مساحت سطح را وارد کنید؛ ضریب اطمینان ۱۰٪ در محاسبه لحاظ می‌شود.</p><label for="bamero-area">مساحت (متر مربع)</label><input id="bamero-area" type="number" min="0" step="0.1" inputmode="decimal"><output id="bamero-coverage-result" data-coverage="' . esc_attr((string) $coverage) . '" aria-live="polite">پوشش‌دهی محصول ثبت نشده است.</output></section>';
 }
 add_action('woocommerce_after_add_to_cart_form', 'bamero_coverage_calculator', 20);
 
@@ -242,7 +242,7 @@ add_filter('woocommerce_enqueue_styles', '__return_empty_array');
 // registered, so WooCommerce rendered the default English breadcrumb).
 function bamero_woocommerce_breadcrumb_defaults($defaults) {
     $defaults['delimiter'] = ' <i class="fas fa-chevron-left" aria-hidden="true"></i> ';
-    $defaults['wrap_before'] = '<nav class="woocommerce-breadcrumb" aria-label="' . esc_attr__('مسیر ناوبری', 'bamero') . '">';
+    $defaults['wrap_before'] = '<nav class="woocommerce-breadcrumb" aria-label="' . esc_attr__('مسیر صفحه', 'bamero') . '">';
     $defaults['wrap_after'] = '</nav>';
     $defaults['home'] = __('خانه', 'bamero');
     return $defaults;
@@ -263,7 +263,7 @@ function bamero_product_search_form($form) {
     $form = '<form role="search" method="get" class="woocommerce-product-search" action="' . esc_url(home_url('/')) . '">';
     $field_id = 'woocommerce-product-search-field-' . uniqid();
     $form .= '<label class="screen-reader-text" for="' . esc_attr($field_id) . '">' . _x('Search for:', 'label', 'woocommerce') . '</label>';
-    $form .= '<input type="search" id="' . esc_attr($field_id) . '" class="search-field" placeholder="' . esc_attr__('جستجوی محصولات...', 'bamero') . '" value="' . esc_attr(get_search_query()) . '" name="s" />';
+    $form .= '<input type="search" id="' . esc_attr($field_id) . '" class="search-field" placeholder="' . esc_attr__('جست‌وجوی محصولات…', 'bamero') . '" value="' . esc_attr(get_search_query()) . '" name="s" />';
     $form .= '<button type="submit" value="' . esc_attr_x('Search', 'submit button', 'woocommerce') . '"><i class="fas fa-search"></i></button>';
     $form .= '<input type="hidden" name="post_type" value="product" />';
     $form .= '</form>';

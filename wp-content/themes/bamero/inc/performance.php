@@ -16,9 +16,11 @@ defined('ABSPATH') || exit;
 // Defer JavaScript loading
 function bamero_defer_scripts($tag, $handle, $src) {
     // JS-01/02: defer only theme main script — never core library handles
-    if ($handle === 'bamero-script') {
-        return '<script type="text/javascript" src="' . esc_url($src) . '" defer></script>' . "
-";
+    // Only add the attribute to the external tag: rebuilding the whole $tag
+    // dropped the id attribute and the wp_add_inline_script() "before" block
+    // (window.BAMERO_CART_SELECTOR) that WordPress prints in the same string.
+    if ($handle === 'bamero-script' && strpos($tag, ' defer') === false) {
+        $tag = preg_replace('#<script([^>]*)\ssrc=#', '<script$1 defer src=', $tag, 1);
     }
     return $tag;
 }

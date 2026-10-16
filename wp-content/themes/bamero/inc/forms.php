@@ -17,16 +17,17 @@ defined('ABSPATH') || exit;
 function bamero_color_consultation_shortcode() {
     $status = isset($_GET['consultation_status']) ? sanitize_key(wp_unslash($_GET['consultation_status'])) : '';
     $messages = array(
-        'success' => array('class' => 'woocommerce-message', 'text' => 'درخواست مشاوره شما با موفقیت ارسال شد.'),
+        'success' => array('class' => 'woocommerce-message', 'text' => 'درخواست مشاورهٔ شما با موفقیت ارسال شد.'),
         'error'   => array('class' => 'woocommerce-error', 'text' => 'ارسال درخواست ممکن نشد. لطفاً دوباره تلاش کنید.'),
-        'invalid' => array('class' => 'woocommerce-error', 'text' => 'لطفاً همه فیلدها را به‌درستی تکمیل کنید.'),
+        'invalid' => array('class' => 'woocommerce-error', 'text' => 'لطفاً همهٔ فیلدها را به‌درستی تکمیل کنید.'),
+        'rate_limited' => array('class' => 'woocommerce-error', 'text' => 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.'),
     );
 
     ob_start();
     ?>
     <div class="color-consultation-form">
-        <h2>مشاوره رنگ</h2>
-        <p>برای دریافت مشاوره رایگان در مورد انتخاب رنگ، فرم زیر را تکمیل کنید.</p>
+        <h2>مشاورهٔ رنگ</h2>
+        <p>برای دریافت مشاورهٔ رایگان دربارهٔ انتخاب رنگ، فرم زیر را تکمیل کنید.</p>
         <?php if (isset($messages[$status])) : ?>
             <div class="<?php echo esc_attr($messages[$status]['class']); ?>" role="status">
                 <?php echo esc_html($messages[$status]['text']); ?>
@@ -40,7 +41,7 @@ function bamero_color_consultation_shortcode() {
                 <input type="text" id="consultation-name" name="name" required aria-required="true" autocomplete="name">
             </div>
             <div class="form-group">
-                <label for="consultation-phone">موبایل:</label>
+                <label for="consultation-phone">شمارهٔ موبایل:</label>
                 <input type="tel" id="consultation-phone" name="phone" required aria-required="true" autocomplete="tel" inputmode="numeric" placeholder="09123456789">
             </div>
             <div class="form-group">
@@ -129,11 +130,11 @@ function bamero_customize_register($wp_customize) {
     ));
 
     $fields = array(
-        'bamero_phone_number'  => array('label' => __('شماره تماس', 'bamero'), 'type' => 'text', 'default' => '۰۹۱۳۴۲۹۲۳۲۹'),
+        'bamero_phone_number'  => array('label' => __('شمارهٔ تماس', 'bamero'), 'type' => 'text', 'default' => '۰۹۱۳۴۲۹۲۳۲۹'),
         'bamero_address'       => array('label' => __('نشانی', 'bamero'), 'type' => 'textarea', 'default' => 'اصفهان، خیابان خرم، نرسیده به خیابان صارمیه'),
-        'bamero_instagram_url' => array('label' => __('آدرس اینستاگرام', 'bamero'), 'type' => 'url', 'default' => ''),
-        'bamero_telegram_url'  => array('label' => __('آدرس تلگرام', 'bamero'), 'type' => 'url', 'default' => ''),
-        'bamero_whatsapp_url'  => array('label' => __('آدرس واتساپ', 'bamero'), 'type' => 'url', 'default' => ''),
+        'bamero_instagram_url' => array('label' => __('پیوند اینستاگرام', 'bamero'), 'type' => 'url', 'default' => ''),
+        'bamero_telegram_url'  => array('label' => __('پیوند تلگرام', 'bamero'), 'type' => 'url', 'default' => ''),
+        'bamero_whatsapp_url'  => array('label' => __('پیوند واتساپ', 'bamero'), 'type' => 'url', 'default' => ''),
     );
 
     foreach ($fields as $id => $field) {

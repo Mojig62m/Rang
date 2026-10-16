@@ -8,7 +8,14 @@
   .product-grid-shell .products,
   .product-grid-shell .product-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--grid-gap, 1rem);
+    gap: var(--spacing-md);
+  }
+}
+
+@container bamero-products (max-width: 30rem) {
+  .product-grid-shell .products,
+  .product-grid-shell .product-grid {
+    gap: var(--spacing-sm);
   }
 }
 
@@ -16,5 +23,6 @@
   .product-grid-shell .products,
   .product-grid-shell .product-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--spacing-lg);
   }
 }

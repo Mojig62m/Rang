@@ -201,7 +201,15 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
 
         if (!wp_check_password($otp, $data['hash'])) {
             $data['attempts'] = $attempts + 1;
-            set_transient(bamero_otp_transient_key($phone), $data, BAMERO_MOBILE_AUTH_OTP_TTL);
+            // Keep the ORIGINAL expiry: re-saving with the full TTL would let
+            // every wrong guess extend the code's lifetime indefinitely.
+            $created   = isset($data['created']) ? (int) $data['created'] : time();
+            $remaining = BAMERO_MOBILE_AUTH_OTP_TTL - (time() - $created);
+            if ($remaining <= 0) {
+                delete_transient(bamero_otp_transient_key($phone));
+                return new WP_Error('otp_expired', __('کد منقضی شده است. دوباره درخواست دهید.', 'bamero-mobile-auth'));
+            }
+            set_transient(bamero_otp_transient_key($phone), $data, $remaining);
             return new WP_Error('otp_mismatch', __('کد تأیید اشتباه است.', 'bamero-mobile-auth'));
         }
 

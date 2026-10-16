@@ -38,12 +38,12 @@ $swatch_label = $ral_code ? $ral_code : ($swatch !== '#F8F9FA' ? $swatch : 'کد
             <?php if ($img_id) : ?>
                 <?php echo $product->get_image('woocommerce_thumbnail', array('loading' => 'lazy', 'decoding' => 'async', 'alt' => $product->get_name())); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             <?php else : ?>
-                <div class="paint-swatch" style="background-color:<?php echo esc_attr($swatch); ?>" role="img" aria-label="<?php echo esc_attr(sprintf('رنگ %s کد %s', $product->get_name(), $swatch_label)); ?>">
+                <div class="paint-swatch" style="background-color:<?php echo esc_attr($swatch); ?>" role="img" aria-label="<?php echo esc_attr(sprintf('رنگ %s، کد %s', $product->get_name(), $swatch_label)); ?>">
                     <span><?php echo esc_html($swatch_label); ?></span>
                 </div>
             <?php endif; ?>
         </a>
-        <a class="product-quick-view" href="<?php echo esc_url($product->get_permalink()); ?>"><?php echo esc_html__('مشاهده محصول', 'bamero'); ?></a>
+        <a class="product-quick-view" href="<?php echo esc_url($product->get_permalink()); ?>"><?php echo esc_html__('مشاهدهٔ محصول', 'bamero'); ?></a>
     </div>
 
     <div class="product-info">
@@ -68,7 +68,7 @@ $swatch_label = $ral_code ? $ral_code : ($swatch !== '#F8F9FA' ? $swatch : 'کد
                     $product->is_purchasable() && $product->is_in_stock() ? 'ajax_add_to_cart' : '',
                     esc_attr((string) $product->get_id()),
                     esc_attr($product->get_sku()),
-                    esc_attr(sprintf(__('افزودن %s به سبد', 'bamero'), $product->get_name()))
+                    esc_attr(sprintf(__('افزودن %s به سبد خرید', 'bamero'), $product->get_name()))
                 ),
                 $product
             );

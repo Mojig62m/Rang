@@ -1,438 +1,136 @@
 /*
- * WooCommerce RTL Custom Styles for Bamero Theme
+ * WooCommerce RTL fixes for the Bamero theme.
+ *
+ * woocommerce.css is written with logical properties, so layout already
+ * mirrors automatically. This file only holds direction-specific fixes:
+ * bidi isolation for prices/numbers, LTR data fields, and glyphs or
+ * transforms that do not flip on their own.
  */
 
-/* ===== GENERAL RTL STYLES ===== */
-.woocommerce {
+/* ===== 1. DOCUMENT DIRECTION ===== */
+div.woocommerce,
+.single-product div.product,
+form.woocommerce-form,
+form.checkout,
+.woocommerce-breadcrumb,
+.woocommerce-tabs,
+.woocommerce-MyAccount-navigation,
+.woocommerce-MyAccount-content {
     direction: rtl;
     text-align: start;
 }
 
-/* ===== SHOP PAGE RTL STYLES ===== */
-.shop-container {
+/* ===== 2. PRICES & NUMBERS =====
+ * isolate (not bidi-override) keeps Persian currency labels readable while
+ * stopping digits/symbols from reordering against surrounding RTL text. */
+.price,
+.price del,
+.price ins,
+.woocommerce-Price-amount,
+.amount {
+    unicode-bidi: isolate;
     direction: rtl;
 }
 
-.shop-sidebar {
-    margin-inline-end: 0;
-    margin-inline-start: var(--spacing-lg);
-}
-
-/* Sidebar Widgets RTL */
-.sidebar-widget {
-    text-align: start;
-}
-
-.sidebar-widget ul {
-    text-align: start;
-}
-
-/* Product Categories Widget RTL */
-.product-categories {
-    text-align: start;
-}
-
-.product-categories li {
-    text-align: start;
-}
-
-.product-categories a {
-    text-align: start;
-}
-
-.product-categories .toggle-children {
-    float: inline-start;
-}
-
-.product-categories .children {
-    text-align: start;
-}
-
-/* Product Tags Widget RTL */
-.product-tags {
-    justify-content: flex-end;
-}
-
-/* ===== PRODUCT GRID RTL STYLES ===== */
-.products-grid {
-    direction: rtl;
-}
-
-/* Product Card RTL */
-.product-card {
-    text-align: start;
-}
-
-.product-card .product-title {
-    text-align: start;
-}
-
-.product-card .price {
-    text-align: start;
-}
-
-/* ===== SINGLE PRODUCT PAGE RTL STYLES ===== */
-.single-product-container {
-    direction: rtl;
-}
-
-.single-product-container .woocommerce-product-gallery {
-    text-align: start;
-}
-
-.single-product-container .summary {
-    text-align: start;
-}
-
-.single-product-container .summary h1 {
-    text-align: start;
-}
-
-.single-product-container .summary .price {
-    text-align: start;
-}
-
-.single-product-container .summary .woocommerce-product-rating {
-    text-align: start;
-}
-
-.single-product-container .summary .product-meta {
-    text-align: start;
-}
-
-.single-product-container .summary .product-meta > div {
-    text-align: start;
-}
-
-.single-product-container .summary .product-color-code {
-    text-align: start;
-}
-
-.single-product-container .summary .product-brand {
-    text-align: start;
-}
-
-.single-product-container .summary .stock-status {
-    text-align: start;
-}
-
-.single-product-container .summary .woocommerce-product-attributes {
-    text-align: start;
-}
-
-.single-product-container .summary .woocommerce-product-attributes th {
-    text-align: start;
-}
-
-.single-product-container .summary .woocommerce-product-attributes td {
-    text-align: start;
-}
-
-.single-product-container .summary .product-purchase {
-    text-align: start;
-}
-
-.single-product-container .summary .quantity {
-    text-align: start;
-}
-
-.single-product-container .summary .quantity input {
-    text-align: center;
-}
-
-.single-product-container .summary .single_add_to_cart_button {
-    text-align: start;
-}
-
-/* Product Tabs RTL */
-.woocommerce-tabs {
-    direction: rtl;
-}
-
-.woocommerce-tabs ul.tabs {
-    justify-content: flex-end;
-}
-
-.woocommerce-tabs ul.tabs li {
-    margin: 0 0 0 var(--spacing-xs);
-}
-
-.woocommerce-tabs ul.tabs li a {
-    text-align: start;
-}
-
-.woocommerce-tabs .panel {
-    text-align: start;
-}
-
-/* Related Products RTL */
-.related-products {
-    text-align: start;
-}
-
-.related-products h2 {
-    text-align: start;
-}
-
-/* ===== CART PAGE RTL STYLES ===== */
-.cart-container {
-    direction: rtl;
-}
-
-.cart-container table.cart {
-    text-align: start;
-}
-
-.cart-container table.cart th,
-.cart-container table.cart td {
-    text-align: start;
-}
-
-.cart-container table.cart td.product-remove {
-    text-align: center;
-}
-
-.cart-container table.cart td.product-thumbnail {
-    text-align: center;
-}
-
-.cart-container table.cart td.product-name {
-    text-align: start;
-}
-
-.cart-container table.cart td.product-price,
-.cart-container table.cart td.product-subtotal {
-    text-align: start;
-}
-
-.cart-container table.cart td.product-quantity {
-    text-align: center;
-}
-
-.cart-container .cart-collaterals {
-    justify-content: flex-end;
-}
-
-.cart-container .cart_totals {
-    text-align: start;
-}
-
-.cart-container .cart_totals h2 {
-    text-align: start;
-}
-
-.cart-container .cart_totals table {
-    text-align: start;
-}
-
-.cart-container .cart_totals table th,
-.cart-container .cart_totals table td {
-    text-align: start;
-}
-
-.cart-container .checkout-button {
-    text-align: start;
-}
-
-/* ===== CHECKOUT PAGE RTL STYLES ===== */
-.checkout-container {
-    direction: rtl;
-    text-align: start;
-}
-
-.checkout-container .woocommerce-billing-fields,
-.checkout-container .woocommerce-shipping-fields {
-    text-align: start;
-}
-
-.checkout-container .woocommerce-billing-fields h3,
-.checkout-container .woocommerce-shipping-fields h3 {
-    text-align: start;
-}
-
-.checkout-container .form-row {
-    text-align: start;
-}
-
-.checkout-container .form-row label {
-    text-align: start;
-}
-
-.checkout-container .form-row input,
-.checkout-container .form-row select,
-.checkout-container .form-row textarea {
-    text-align: start;
-}
-
-.checkout-container .form-row.woocommerce-validated input,
-.checkout-container .form-row.woocommerce-validated select,
-.checkout-container .form-row.woocommerce-validated textarea {
-    text-align: start;
-}
-
-.checkout-container .form-row.woocommerce-invalid input,
-.checkout-container .form-row.woocommerce-invalid select,
-.checkout-container .form-row.woocommerce-invalid textarea {
-    text-align: start;
-}
-
-.checkout-container #order_review {
-    text-align: start;
-}
-
-.checkout-container #order_review h3 {
-    text-align: start;
-}
-
-.checkout-container #order_review table {
-    text-align: start;
-}
-
-.checkout-container #order_review table th,
-.checkout-container #order_review table td {
-    text-align: start;
-}
-
-.checkout-container #order_review table.woocommerce-checkout-review-order-table th {
-    text-align: start;
-}
-
-.checkout-container .place-order {
-    text-align: start;
-}
-
-/* ===== WOOCOMMERCE NOTICES RTL ===== */
-.woocommerce-notices {
-    inset-inline-end: 20px;
-    text-align: start;
-}
-
-.woocommerce-message,
-.woocommerce-error,
-.woocommerce-info {
-    text-align: start;
-}
-
-/* ===== WOOCOMMERCE PAGINATION RTL ===== */
-.woocommerce-pagination {
-    text-align: start;
-}
-
-.woocommerce-pagination ul {
-    justify-content: flex-end;
-}
-
-/* ===== WOOCOMMERCE BREADCRUMB RTL ===== */
-.woocommerce-breadcrumb {
-    text-align: start;
-    direction: rtl;
-}
-
-.woocommerce-breadcrumb a {
-    margin: 0 var(--spacing-xs);
-}
-
-/* ===== FORMS RTL ===== */
-form.woocommerce-form {
-    direction: rtl;
-    text-align: start;
-}
-
-form.woocommerce-form label {
-    text-align: start;
-}
-
-form.woocommerce-form input,
-form.woocommerce-form select,
-form.woocommerce-form textarea {
-    text-align: start;
-}
-
-form.woocommerce-form .form-row {
-    text-align: start;
-}
-
-form.woocommerce-form .form-row input,
-form.woocommerce-form .form-row select,
-form.woocommerce-form .form-row textarea {
-    text-align: start;
-}
-
-/* ===== BUTTONS RTL ===== */
-.woocommerce-button,
-.woocommerce-button.button,
-.button.woocommerce-button {
-    text-align: center;
-}
-
-/* ===== PRICE RTL ===== */
-.price {
-    text-align: start;
-    unicode-bidi: bidi-override;
-    direction: ltr;
-}
-
-.price del {
-    unicode-bidi: bidi-override;
-    direction: ltr;
-}
-
+.price del,
 .price ins {
-    unicode-bidi: bidi-override;
+    display: inline-block;
+}
+
+.woocommerce-result-count,
+.category-list .count,
+.product-categories .count,
+.woocommerce-pagination .page-numbers {
+    unicode-bidi: isolate;
+}
+
+/* ===== 3. LTR DATA FIELDS =====
+ * Phone numbers, e-mail addresses and numeric values are typed LTR but stay
+ * aligned to the RTL form edge. */
+.woocommerce input[type="tel"],
+.woocommerce input[type="email"],
+.woocommerce input[type="number"],
+.woocommerce input[type="url"],
+.bamero-coverage-calculator input[type="number"],
+#billing_phone,
+#billing_email,
+#billing_postcode,
+#shipping_postcode,
+#account_email,
+#reg_email {
     direction: ltr;
+    text-align: end;
 }
 
-/* ===== QUANTITY RTL ===== */
-.quantity {
-    text-align: start;
-}
-
-.quantity input {
+/* Quantity steppers read best centred in either direction. */
+.woocommerce .quantity input.qty,
+.quantity input[type="number"] {
+    direction: ltr;
     text-align: center;
 }
 
-/* ===== TABLES RTL ===== */
-.woocommerce table {
+/* Placeholders in LTR fields are Persian text; keep them RTL-shaped. */
+.woocommerce input[type="tel"]::placeholder,
+.woocommerce input[type="email"]::placeholder {
+    direction: rtl;
+}
+
+/* Colour codes, SKUs and technical values are Latin/numeric tokens. */
+.product-color-code span,
+.sku,
+.bamero-technical-specs .technical-value {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+/* ===== 4. SELECT2 (country / state) ===== */
+.select2-container[dir="rtl"] .select2-selection--single .select2-selection__rendered,
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding-inline: 0 var(--spacing-lg);
     text-align: start;
 }
 
-.woocommerce table th,
-.woocommerce table td {
-    text-align: start;
+/* ===== 5. GLYPHS THAT DO NOT MIRROR ===== */
+/* Breadcrumb separators: "/" and arrows point toward the inline-end. */
+.woocommerce-breadcrumb .sep,
+.breadcrumb-bar .sep {
+    display: inline-block;
 }
 
-/* ===== RESPONSIVE RTL STYLES ===== */
-@media (max-width: 1200px) {
-    .shop-container {
-        flex-direction: column;
-    }
-    
-    .shop-sidebar {
-        margin-inline-end: 0;
-        margin-inline-start: 0;
-    }
-    
-    .single-product-container {
-        flex-direction: column;
-    }
+/* Category tree toggle chevron (rotation is direction-agnostic). */
+.product-categories .toggle-children {
+    float: none;
 }
 
+/* Star ratings fill from the inline-start (right) edge. */
+.star-rating,
+.woocommerce p.stars {
+    direction: rtl;
+}
+
+/* ===== 6. HORIZONTAL SCROLL CONTAINERS =====
+ * Tab strips and the account nav start at the right edge in RTL. */
+.woocommerce-tabs ul.tabs,
+.woocommerce-MyAccount-navigation ul {
+    direction: rtl;
+}
+
+/* ===== 7. NOTICES =====
+ * Toasts dock on the inline-end side (left in RTL), clear of the logo. */
+.woocommerce-notices {
+    inset-inline-start: auto;
+}
+
+/* ===== 8. MOBILE STACKED TABLES =====
+ * Labels from data-title sit on the right (start), values on the left (end). */
 @media (max-width: 768px) {
-    .woocommerce-tabs ul.tabs {
-        flex-direction: column;
-    }
-    
-    .woocommerce-tabs ul.tabs li {
-        margin: var(--spacing-xs) 0;
-    }
-    
-    .cart-container table.cart th,
-    .cart-container table.cart td {
+    .woocommerce table.shop_table_responsive td[data-title]::before,
+    .cart-container table.cart td[data-title]::before {
         text-align: start;
     }
-    
-    .cart-container table.cart td.product-remove,
-    .cart-container table.cart td.product-thumbnail {
-        text-align: center;
+
+    .woocommerce table.shop_table_responsive tbody td,
+    .cart-container table.cart td {
+        text-align: end;
     }
 }

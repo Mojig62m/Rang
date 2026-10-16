@@ -52,7 +52,9 @@ function bamero_security_headers() {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=(), usb=()');
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('X-Permitted-Cross-Domain-Policies: none');
     $n = bamero_csp_nonce();
     // CSP-L3 style: no unsafe-inline for scripts; scripts need nonce.
     // style-src-attr allows the few dynamic inline style attributes (color swatches)
@@ -64,9 +66,16 @@ function bamero_security_headers() {
         . "font-src 'self'; "
         . "img-src 'self' data: https:; "
         . "connect-src 'self'; "
+        . "object-src 'none'; "
+        . "frame-src 'none'; "
         . "frame-ancestors 'self'; "
         . "base-uri 'self'; "
         . "form-action 'self'";
+    // HTTPS-only directives: never sent over plain http (local/staging stay usable).
+    if (is_ssl()) {
+        $csp .= '; upgrade-insecure-requests';
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+    }
     header('Content-Security-Policy: ' . $csp);
 }
 } // end if ( ! function_exists( 'bamero_security_headers' ) )
@@ -105,3 +114,33 @@ function bamero_disable_author_enum($redirect, $request) {
 }
 add_filter('redirect_canonical', 'bamero_disable_author_enum', 10, 2);
 
+/**
+ * Block REST user enumeration for anonymous visitors (/wp/v2/users*).
+ * Logged-in users (block editor, admin) and the WooCommerce Store API
+ * (/wc/store/*) are unaffected.
+ */
+function bamero_restrict_rest_user_endpoints($endpoints) {
+    if (is_user_logged_in()) {
+        return $endpoints;
+    }
+    foreach (array_keys($endpoints) as $route) {
+        if (strpos($route, '/wp/v2/users') === 0) {
+            unset($endpoints[$route]);
+        }
+    }
+    return $endpoints;
+}
+add_filter('rest_endpoints', 'bamero_restrict_rest_user_endpoints');
+
+/** Keep author logins out of the core XML sitemap (wp-sitemap-users-*.xml). */
+function bamero_remove_sitemap_users_provider($provider, $name) {
+    return $name === 'users' ? false : $provider;
+}
+add_filter('wp_sitemaps_add_provider', 'bamero_remove_sitemap_users_provider', 10, 2);
+
+/** Do not leak author name/URL through public oEmbed responses. */
+function bamero_oembed_hide_author($data) {
+    unset($data['author_name'], $data['author_url']);
+    return $data;
+}
+add_filter('oembed_response_data', 'bamero_oembed_hide_author');
