@@ -184,6 +184,18 @@ bash scripts/launch-day-gate.sh https://دامنه --health-token "$BAMERO_HEALT
 - [WAVE](https://wave.webaim.org/)
 - [axe](https://www.deque.com/axe/)
 
+## 🤖 مستندات عامل (Agent Docs)
+
+عامل‌های هوش مصنوعی و ابزارهای خودکار پیش از هر کاری روی این مخزن باید مستندات زیر را بخوانند:
+
+| فایل | نقش |
+|---|---|
+| [README_FOR_AGENT.md](README_FOR_AGENT.md) | نقطهٔ شروع عامل (Start) |
+| [AGENT_OPERATIONAL_DIRECTIVE.md](AGENT_OPERATIONAL_DIRECTIVE.md) | دستورالعمل عملیاتی عامل (Directive) |
+| [AGENT_QUICK_START.md](AGENT_QUICK_START.md) | یادآوری سریع (Quick Start) |
+| [AGENT_STARTUP_CHECKLIST.md](AGENT_STARTUP_CHECKLIST.md) | چک‌لیست راه‌اندازی (Checklist) |
+| [copilot-agent-contract.md](copilot-agent-contract.md) | قرارداد عامل Copilot ([نسخهٔ .github](https://github.com/Mojig62m/Rang/blob/main/.github/copilot-agent-contract.md)) |
+
 ## مستندسازی
 
 برای اطلاعات بیشتر، به فایل‌های زیر مراجعه کنید:
