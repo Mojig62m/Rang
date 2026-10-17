@@ -24,62 +24,9 @@ add_filter('the_generator', 'bamero_remove_wp_version_rss');
 add_filter('xmlrpc_enabled', '__return_false');
 
 // =============================================================================
-// SECURITY HEADERS (sent via PHP when server allows)
+// SECURITY HEADERS (canonical definitions live in bamero-production-core plugin)
+// Theme keeps fallback guards only for backward compatibility.
 // =============================================================================
-
-/**
- * CSP nonce (SEC-06). Generated once per request.
- *
- * Guarded with function_exists() because the canonical definition lives in the
- * bamero-production-core plugin, which WordPress loads BEFORE the theme. Without
- * this guard PHP aborts with a fatal "Cannot redeclare" error (see audit report).
- */
-if ( ! function_exists( 'bamero_csp_nonce' ) ) {
-    function bamero_csp_nonce() {
-        static $nonce = null;
-        if ($nonce === null) {
-            $nonce = base64_encode(random_bytes(16));
-        }
-        return $nonce;
-    }
-}
-
-if ( ! function_exists( 'bamero_security_headers' ) ) {
-function bamero_security_headers() {
-    if (headers_sent() || is_admin()) {
-        return;
-    }
-    header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
-    header('Referrer-Policy: strict-origin-when-cross-origin');
-    header('Permissions-Policy: geolocation=(), microphone=(), camera=(), usb=()');
-    header('Cross-Origin-Opener-Policy: same-origin');
-    header('X-Permitted-Cross-Domain-Policies: none');
-    $n = bamero_csp_nonce();
-    // CSP-L3 style: no unsafe-inline for scripts; scripts need nonce.
-    // style-src-attr allows the few dynamic inline style attributes (color swatches)
-    // without opening up <style>/<link> to unsafe-inline.
-    $csp = "default-src 'self'; "
-        . "script-src 'self' 'nonce-{$n}'; "
-        . "style-src 'self'; "
-        . "style-src-attr 'unsafe-inline'; "
-        . "font-src 'self'; "
-        . "img-src 'self' data: https:; "
-        . "connect-src 'self'; "
-        . "object-src 'none'; "
-        . "frame-src 'none'; "
-        . "frame-ancestors 'self'; "
-        . "base-uri 'self'; "
-        . "form-action 'self'";
-    // HTTPS-only directives: never sent over plain http (local/staging stay usable).
-    if (is_ssl()) {
-        $csp .= '; upgrade-insecure-requests';
-        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
-    }
-    header('Content-Security-Policy: ' . $csp);
-}
-} // end if ( ! function_exists( 'bamero_security_headers' ) )
-add_action('send_headers', 'bamero_security_headers');
 
 function bamero_script_loader_nonce($tag, $handle, $src) {
     if (is_admin()) {
