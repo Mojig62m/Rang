@@ -83,6 +83,9 @@ function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
 add_filter('gettext', 'bamero_woocommerce_persian_text', 20, 3);
 
 // Custom product fields
+/**
+ * Add custom product fields to admin product editor.
+ */
 function bamero_add_custom_product_fields() {
     woocommerce_wp_text_input(array(
         'id' => '_product_color_code',

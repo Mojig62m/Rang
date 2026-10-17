@@ -97,7 +97,9 @@ function bamero_otp_transient_key($phone) {
  */
 function bamero_request_otp($phone_raw, $context = 'login') {
     $schema = bamero_auth_schema_validate($phone_raw, null, $context);
-    if (is_wp_error($schema)) return $schema;
+    if (is_wp_error($schema)) {
+        return $schema;
+    }
     $phone = $schema['phone'];
 
     $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '0.0.0.0';
@@ -174,7 +176,9 @@ function bamero_request_otp($phone_raw, $context = 'login') {
  */
 function bamero_verify_otp($phone_raw, $otp_raw) {
     $schema = bamero_auth_schema_validate($phone_raw, $otp_raw, 'login');
-    if (is_wp_error($schema)) return $schema;
+    if (is_wp_error($schema)) {
+        return $schema;
+    }
     $phone = $schema['phone'];
     $otp = preg_replace('/\D+/', '', (string) $otp_raw);
 

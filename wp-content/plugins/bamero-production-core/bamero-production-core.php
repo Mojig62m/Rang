@@ -137,9 +137,13 @@ function bamero_security_headers() {
 }
 add_action('send_headers', 'bamero_security_headers', 1);
 function bamero_checkout_idempotency($order, $posted) {
-    if (empty($_POST['bamero_idempotency_key'])) return;
+    if (empty($_POST['bamero_idempotency_key'])) {
+        return;
+    }
     $key = sanitize_text_field(wp_unslash($_POST['bamero_idempotency_key']));
-    if (strlen($key) < 16 || strlen($key) > 128) return;
+    if (strlen($key) < 16 || strlen($key) > 128) {
+        return;
+    }
     if (is_object($order) && is_callable(array($order, 'update_meta_data'))) {
         $order->update_meta_data('_idempotency_key', hash('sha256', $key));
     }
@@ -219,9 +223,13 @@ function bamero_health_rest_routes() {
 add_action('rest_api_init', 'bamero_health_rest_routes');
 
 function bamero_find_idempotent_order($order_id) {
-    if (empty($_POST['bamero_idempotency_key'])) return $order_id;
+    if (empty($_POST['bamero_idempotency_key'])) {
+        return $order_id;
+    }
     $key = sanitize_text_field(wp_unslash($_POST['bamero_idempotency_key']));
-    if (strlen($key) < 16 || strlen($key) > 128) return $order_id;
+    if (strlen($key) < 16 || strlen($key) > 128) {
+        return $order_id;
+    }
     $orders = wc_get_orders(array('limit' => 1, 'return' => 'ids', 'meta_key' => '_idempotency_key', 'meta_value' => hash('sha256', $key)));
     return !empty($orders) ? (int) $orders[0] : $order_id;
 }
@@ -236,7 +244,9 @@ is_string($payload)) return false;
 }
 
 function bamero_payment_callback_guard() {
-    if (!isset($_GET['bamero_payment_callback'])) return;
+    if (!isset($_GET['bamero_payment_callback'])) {
+        return;
+    }
     $payload = file_get_contents('php://input');
     $signature = isset($_SERVER['HTTP_X_BAMERO_SIGNATURE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_BAMERO_SIGNATURE'])) : '';
     if (!bamero_verify_payment_callback($payload, $signature)) {
@@ -248,13 +258,17 @@ function bamero_payment_callback_guard() {
 add_action('template_redirect', 'bamero_payment_callback_guard', 1);
 
 function bamero_enqueue_cart_contract() {
-    if (!function_exists('is_woocommerce') || (!is_woocommerce() && !is_cart() && !is_checkout())) return;
+    if (!function_exists('is_woocommerce') || (!is_woocommerce() && !is_cart() && !is_checkout())) {
+        return;
+    }
     wp_add_inline_script('bamero-script', 'window.BAMERO_CART_SELECTOR=' . wp_json_encode(BAMERO_CART_SELECTOR) . ';', 'before');
 }
 add_action('wp_enqueue_scripts', 'bamero_enqueue_cart_contract', 30);
 
 function bamero_cart_fragment($fragments) {
-    if (!function_exists('WC') || !WC()->cart) return $fragments;
+    if (!function_exists('WC') || !WC()->cart) {
+        return $fragments;
+    }
     ob_start();
     ?>
     <a href="<?php echo esc_url(wc_get_cart_url()); ?>" class="mini-cart-link bamero-mini-cart" aria-label="<?php echo esc_attr__('سبد خرید', 'bamero'); ?>">
@@ -304,9 +318,15 @@ function bamero_mark_session_start($user_login, $user = null) {
 add_action('wp_login', 'bamero_mark_session_start', 10, 2);
 
 function bamero_enforce_session_timeout() {
-    if (!is_user_logged_in() || is_admin()) return;
-    if ((defined('DOING_AJAX') && DOING_AJAX) || (defined('DOING_CRON') && DOING_CRON) || (defined('REST_REQUEST') && REST_REQUEST)) return;
-    if (function_exists('wp_doing_ajax') && wp_doing_ajax()) return;
+    if (!is_user_logged_in() || is_admin()) {
+        return;
+    }
+    if ((defined('DOING_AJAX') && DOING_AJAX) || (defined('DOING_CRON') && DOING_CRON) || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return;
+    }
+    if (function_exists('wp_doing_ajax') && wp_doing_ajax()) {
+        return;
+    }
 
     $user_id = get_current_user_id();
     $now     = time();
@@ -341,7 +361,9 @@ function bamero_enforce_session_timeout() {
 add_action('init', 'bamero_enforce_session_timeout', 20);
 
 function bamero_admin_health_notice() {
-    if (!current_user_can('manage_options')) return;
+    if (!current_user_can('manage_options')) {
+        return;
+    }
     if (!get_option('bamero_production_core_health')) {
         echo '<div class="notice notice-warning"><p>' . esc_html__('Bamero Production Core فعال است؛ Redis و secret درگاه را در محیط production بررسی کنید.', 'bamero-production-core') . '</p></div>';
     }
@@ -373,9 +395,13 @@ function bamero_seal_notification_payload(array $payload) {
 }
 
 function bamero_open_notification_payload($sealed) {
-    if (!function_exists('openssl_decrypt') || !defined('AUTH_KEY') || !AUTH_KEY) return false;
+    if (!function_exists('openssl_decrypt') || !defined('AUTH_KEY') || !AUTH_KEY) {
+        return false;
+    }
     $raw = base64_decode((string) $sealed, true);
-    if (false === $raw || strlen($raw) < 28) return false;
+    if (false === $raw || strlen($raw) < 28) {
+        return false;
+    }
     $iv = substr($raw, 0, 12);
     $tag = substr($raw, 12, 16);
     $cipher = substr($raw, 28);
@@ -466,7 +492,9 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
     global $wpdb;
     $table = bamero_notification_table_name();
     $schema = bamero_notification_schema_validate($template_key, $payload);
-    if (is_wp_error($schema)) return $schema;
+    if (is_wp_error($schema)) {
+        return $schema;
+    }
     $clean = array('mobile' => isset($payload['mobile']) ? (string) $payload['mobile'] : '', 'order_id' => (int) $order_id, 'template_key' => sanitize_key($template_key));
     if (isset($payload['otp'])) { $clean['otp'] = (string) $payload['otp']; }
     $payload_hash = hash('sha256', wp_json_encode($clean));
@@ -478,7 +506,9 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
         return (int) $exists;
     }
     $sealed = bamero_seal_notification_payload($payload);
-    if (is_wp_error($sealed)) return $sealed;
+    if (is_wp_error($sealed)) {
+        return $sealed;
+    }
     $expires = false !== stripos($template_key, 'otp') ? gmdate('Y-m-d H:i:s', time() + 600) : gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS);
     $ok = $wpdb->insert($table, array(
         'order_id' => (int) $order_id, 'user_id' => (int) $user_id, 'template_key' => sanitize_key($template_key),
@@ -501,7 +531,9 @@ function bamero_sms_provider_send($mobile, $template_key, array $payload, $idemp
     if (null === $result) {
         return new WP_Error('sms_provider_not_configured', 'SMS provider is not configured.');
     }
-    if (is_wp_error($result)) return $result;
+    if (is_wp_error($result)) {
+        return $result;
+    }
     if (true === $result) {
         return array('provider_message_id' => 'provider_ack');
     }
@@ -510,7 +542,9 @@ function bamero_sms_provider_send($mobile, $template_key, array $payload, $idemp
 
 /** Native SMS.ir adapter; credentials and template IDs stay in the environment. */
 function bamero_sms_ir_provider_send($result, $mobile, $template_key, array $payload, $idempotency_key) {
-    if (null !== $result || 'sms_ir' !== strtolower((string) getenv('SMS_PROVIDER'))) return $result;
+    if (null !== $result || 'sms_ir' !== strtolower((string) getenv('SMS_PROVIDER'))) {
+        return $result;
+    }
     // Production-only flag: SMS is disabled in staging unless explicitly enabled
     if (getenv('BAMERO_ENVIRONMENT') === 'staging' && getenv('BAMERO_ENABLE_SMS_IN_STAGING') !== 'true') {
         bamero_log_event('sms_blocked_staging', array('template_key' => sanitize_key($template_key)));
@@ -531,11 +565,15 @@ function bamero_sms_ir_provider_send($result, $mobile, $template_key, array $pay
         'headers' => array('X-API-KEY' => $api_key, 'Accept' => 'application/json', 'Content-Type' => 'application/json'),
         'body' => wp_json_encode(array('mobile' => preg_replace('/\D+/', '', (string) $mobile), 'templateId' => (int) $template_id, 'parameters' => $parameters)),
     ));
-    if (is_wp_error($response)) return new WP_Error('sms_provider_http_error', 'SMS.ir request failed.');
+    if (is_wp_error($response)) {
+        return new WP_Error('sms_provider_http_error', 'SMS.ir request failed.');
+    }
     $status = (int) wp_remote_retrieve_response_code($response);
     $body = json_decode(wp_remote_retrieve_body($response), true);
 
-    if ($status < 200 || $status >= 300 || empty($body['status'])) return new WP_Error('sms_provider_rejected', 'SMS.ir rejected the message.');
+    if ($status < 200 || $status >= 300 || empty($body['status'])) {
+        return new WP_Error('sms_provider_rejected', 'SMS.ir rejected the message.');
+    }
     $message_id = isset($body['data']['messageId']) ? (string) $body['data']['messageId'] : hash('sha256', $idempotency_key);
     return array('provider_message_id' => sanitize_text_field($message_id));
 }
@@ -597,13 +635,17 @@ function bamero_schedule_notification_worker() { if (!wp_next_scheduled('bamero_
 add_action('init', 'bamero_schedule_notification_worker', 20);
 
 function bamero_queue_order_sms($order_id, $old_status, $new_status, $order) {
-    if (!$order || !function_exists('wc_get_order')) return;
+    if (!$order || !function_exists('wc_get_order')) {
+        return;
+    }
     $mobile = $order->get_billing_phone();
     if (!$mobile) {
         return;
     }
     $map = array('processing' => 'order_processing', 'completed' => 'order_delivered', 'cancelled' => 'order_cancelled', 'failed' => 'payment_failed', 'refunded' => 'refund_completed');
-    if (!isset($map[$new_status])) return;
+    if (!isset($map[$new_status])) {
+        return;
+    }
     bamero_queue_notification($order_id, (int) $order->get_user_id(), $map[$new_status], array('mobile' => $mobile, 'order_id' => (int) $order_id));
 }
 add_action('woocommerce_order_status_changed', 'bamero_queue_order_sms', 20, 4);

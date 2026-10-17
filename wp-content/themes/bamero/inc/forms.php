@@ -59,6 +59,9 @@ function bamero_color_consultation_shortcode() {
 }
 add_shortcode('bamero_color_consultation', 'bamero_color_consultation_shortcode');
 
+/**
+ * Process color consultation form submission.
+ */
 function bamero_process_color_consultation() {
     if (!isset($_POST['bamero_color_consultation_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_color_consultation_nonce'])), 'bamero_color_consultation')) {
         wp_die(esc_html__('درخواست نامعتبر است. لطفاً دوباره تلاش کنید.', 'bamero'), '', array('response' => 403));

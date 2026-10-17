@@ -40,6 +40,9 @@ function bamero_zarinpal_bootstrap() {
         /** @var string */
         public $currency = 'IRR';
 
+        /**
+         * Constructor for Zarinpal gateway.
+         */
         public function __construct() {
             $this->id                 = 'bamero_zarinpal';
             $this->method_title       = 'زرین‌پال';

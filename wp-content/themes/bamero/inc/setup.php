@@ -11,6 +11,9 @@
 defined('ABSPATH') || exit;
 
 // ===== THEME SETUP =====
+/**
+ * Theme setup and configuration.
+ */
 function bamero_setup() {
     // Text domain for translations
     load_theme_textdomain('bamero', BAMERO_THEME_PATH . '/languages');
