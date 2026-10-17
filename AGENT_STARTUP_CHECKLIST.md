@@ -405,7 +405,7 @@ echo ""
 
 ```bash
 # قبل از شروع هر کاری:
-مراحل فاز ۱ را به‌صورت دستی یا درون اسکریپت شخصی خود اجرا کنید
+فاز ۱ به‌صورت اجرایی در دسترس است: `bash scripts/agent_preflight.sh` یا `make preflight` (خروجی ۰ = GO، ۱ = STOP؛ fail-closed)
 
 # برای هر ایشو جدید:
 source AGENT_STARTUP_CHECKLIST.md
