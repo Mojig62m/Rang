@@ -23,6 +23,9 @@ function bamero_request_id() {
     return $request_id;
 }
 
+/**
+ * Log structured events with redaction of sensitive fields.
+ */
 function bamero_log_event($event, array $context = array()) {
     $redact = array(
         'phone', 'mobile', 'email', 'order_total', 'authorization', 'signature',

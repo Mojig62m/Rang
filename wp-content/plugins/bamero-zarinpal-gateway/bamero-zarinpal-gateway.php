@@ -95,6 +95,9 @@ function bamero_zarinpal_bootstrap() {
             return '' !== $this->merchant_id && '' !== $this->api_base && '' !== $this->startpay_base;
         }
 
+        /**
+         * Initialize form fields for gateway settings.
+         */
         public function init_form_fields() {
             $this->form_fields = array(
                 'enabled' => array(

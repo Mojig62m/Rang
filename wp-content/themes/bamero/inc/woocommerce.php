@@ -127,6 +127,9 @@ function bamero_add_custom_product_fields() {
 add_action('woocommerce_product_options_general_product_data', 'bamero_add_custom_product_fields');
 
 // Save custom product fields
+/**
+ * Save custom product fields from admin product editor.
+ */
 function bamero_save_custom_product_fields($post_id) {
     $product_color_code = isset($_POST['_product_color_code']) ? sanitize_hex_color(wp_unslash($_POST['_product_color_code'])) : '';
     $product_brand = isset($_POST['_product_brand']) ? sanitize_text_field(wp_unslash($_POST['_product_brand'])) : '';

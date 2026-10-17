@@ -305,6 +305,9 @@ function bamero_login_user($user_id) {
 
 // ----- REST-ish admin-post endpoints (form-friendly, nonce protected) -----
 
+/**
+ * Handle OTP request form submission.
+ */
 function bamero_handle_request_otp() {
     if (!isset($_POST['bamero_otp_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_otp_nonce'])), 'bamero_request_otp')) {
         wp_die(esc_html__('درخواست نامعتبر.', 'bamero-mobile-auth'), '', array('response' => 403));

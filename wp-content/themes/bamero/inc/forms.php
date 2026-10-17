@@ -96,6 +96,9 @@ add_action('admin_post_nopriv_bamero_color_consultation', 'bamero_process_color_
 // ===== CUSTOM TEMPLATE FUNCTIONS =====
 
 // ===== CONTACT FORM HANDLER (native fallback) =====
+/**
+ * Process contact form submission.
+ */
 function bamero_process_contact_submit() {
     if (!isset($_POST['bamero_contact_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_contact_nonce'])), 'bamero_contact')) {
         wp_die(esc_html__('درخواست نامعتبر است.', 'bamero'), '', array('response' => 403));
