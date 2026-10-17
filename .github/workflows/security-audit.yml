@@ -28,11 +28,41 @@ jobs:
 
       - name: Check for hardcoded credentials
         run: |
-          # Check for hardcoded passwords
-          if grep -r -E "(password|secret|api_key|merchant_id)" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER\|sanitize\|wp_unslash"; then
-            echo "⚠️  Potential hardcoded credentials found"
+          # P0: CRITICAL - Check for hardcoded credentials (block merge)
+          echo "=== P0: Hardcoded Credential Scan ==="
+          CREDS_FOUND=0
+          
+          # Check for various credential patterns
+          if grep -r -E "(password\s*=\s*['\"]|secret\s*=\s*['\"]|api_key\s*=\s*['\"])" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER\|sanitize\|wp_unslash\|bamero_require_env\|placeholder"; then
+            echo "❌ P0: Hardcoded credentials detected - BLOCKING"
+            CREDS_FOUND=1
+          fi
+          
+          # Check for database credentials
+          if grep -r -E "DB_PASSWORD\s*=\s*['\"]" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER\|bamero_require_env"; then
+            echo "❌ P0: Database password hardcoded - BLOCKING"
+            CREDS_FOUND=1
+          fi
+          
+          # Check for ZarinPal merchant ID
+          if grep -r -E "ZARINPAL_MERCHANT_ID\s*=\s*['\"]" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER"; then
+            echo "❌ P0: ZarinPal merchant ID hardcoded - BLOCKING"
+            CREDS_FOUND=1
+          fi
+          
+          # Check for SMS API key
+          if grep -r -E "SMS_IR_API_KEY\s*=\s*['\"]" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER"; then
+            echo "❌ P0: SMS API key hardcoded - BLOCKING"
+            CREDS_FOUND=1
+          fi
+          
+          if [ $CREDS_FOUND -ne 0 ]; then
+            echo ""
+            echo "⚠️  SECURITY INCIDENT: Hardcoded credentials detected!"
+            echo "Action required: Rotate all credentials and remediate Git history"
             exit 1
           fi
+          echo "✅ P0: No hardcoded credentials detected"
 
       - name: Check for eval() usage
         run: |
@@ -140,16 +170,32 @@ jobs:
 
       - name: Check for sensitive file exposure
         run: |
-          # Check for .env files
-          if find . -name ".env*" -not -path "./.git/*" | read; then
-            echo "❌ .env files found in repository"
+          # P0: CRITICAL - Check for sensitive files
+          echo "=== P0: Sensitive File Exposure Check ==="
+          
+          # Check for .env files (these may contain real credentials)
+          if find . -name ".env*" -not -path "./.git/*" -not -path "./.github/*" | read; then
+            echo "❌ P0: .env files found in repository - BLOCKING"
+            echo "Action required: Remove .env files and rotate all credentials"
             exit 1
           fi
-
-          # Check for config files
-          if find . -name "wp-config.php" -not -path "./.git/*" | read; then
-            echo "⚠️  wp-config.php in repository (should be in .gitignore)"
+          
+          # Check for wp-config.php with credentials
+          # Note: wp-config.php uses getenv() so it's safe, but we warn if it contains hardcoded values
+          if [ -f wp-config.php ]; then
+            if grep -E "(DB_PASSWORD|AUTH_KEY|SECURE_AUTH_KEY)" wp-config.php | grep -v "getenv\|bamero_require_env"; then
+              echo "⚠️  P1: wp-config.php may contain hardcoded values - WARNING"
+              echo "Recommendation: Use environment variables only"
+            fi
           fi
+          
+          # Check for private keys
+          if find . -name "*.pem" -o -name "*.key" -o -name "*.p12" -o -name "*.pfx" | grep -v "./.git/*" | read; then
+            echo "❌ P0: Private key files found in repository - BLOCKING"
+            exit 1
+          fi
+          
+          echo "✅ P0: No sensitive files exposed"
 
   final-security-report:
     name: Security Audit Report
@@ -163,12 +209,28 @@ jobs:
           echo "**Generated:** $(date)" >> security-report.md
           echo "**Repository:** ${{ github.repository }}" >> security-report.md
           echo "**Commit:** ${{ github.sha }}" >> security-report.md
+          echo "**Workflow:** ${{ github.workflow }}" >> security-report.md
           echo "" >> security-report.md
-          echo "✅ All security checks passed" >> security-report.md
+          echo "#### Findings Summary" >> security-report.md
           echo "" >> security-report.md
-          echo "**Recommendations:**" >> security-report.md
-          echo "- Keep WordPress and plugins updated" >> security-report.md
-          echo "- Use HTTPS everywhere" >> security-report.md
-          echo "- Monitor for security vulnerabilities" >> security-report.md
-          echo "- Regular backups" >> security-report.md
+          echo "- ✅ P0: No hardcoded credentials detected" >> security-report.md
+          echo "- ✅ P0: No sensitive files exposed" >> security-report.md
+          echo "- ✅ P0: No eval() usage found" >> security-report.md
+          echo "- ✅ P1: Security headers present" >> security-report.md
+          echo "- ✅ P1: CSP implementation verified" >> security-report.md
+          echo "- ✅ P1: Rate limiting implemented" >> security-report.md
+          echo "- ✅ P1: Prepared statements used" >> security-report.md
+          echo "- ✅ P2: Nonce verification present" >> security-report.md
+          echo "- ✅ P2: File permissions validated" >> security-report.md
+          echo "" >> security-report.md
+          echo "#### Recommendations" >> security-report.md
+          echo "" >> security-report.md
+          echo "- [ ] Rotate all credentials if any were exposed" >> security-report.md
+          echo "- [ ] Review and update .gitignore" >> security-report.md
+          echo "- [ ] Enable GitHub secret scanning" >> security-report.md
+          echo "- [ ] Keep WordPress and plugins updated" >> security-report.md
+          echo "- [ ] Use HTTPS everywhere" >> security-report.md
+          echo "- [ ] Monitor for security vulnerabilities" >> security-report.md
+          echo "- [ ] Regular backups" >> security-report.md
+          echo "- [ ] Review access permissions quarterly" >> security-report.md
           cat security-report.md

@@ -46,7 +46,12 @@ jobs:
 
       - name: Check code style
         run: |
-          phpcs --standard=PSR12 --extensions=php --encoding=utf-8 -n . 2>/dev/null || true
+          phpcs --standard=PSR12 --extensions=php --encoding=utf-8 -n . 2>/dev/null
+          # Exit with failure if code style issues found (remove || true)
+          if [ $? -ne 0 ]; then
+            echo "❌ Code style violations found. Please fix before merging."
+            exit 1
+          fi
 
   security-check:
     name: Security Headers & CSP
@@ -85,10 +90,49 @@ jobs:
 
       - name: Check WooCommerce functions
         run: |
-          # Check for HPOS compatibility
-          grep -r "custom_order_tables" wp-content/plugins/ || echo "HPOS compatibility check"
-          # Check for WooCommerce constants
-          grep -r "WC_Payment_Gateway" wp-content/plugins/bamero-zarinpal-gateway/ || { echo "Missing WooCommerce gateway class"; exit 1; }
+          # EXECUTABLE TEST: Verify HPOS compatibility declarations
+          echo "=== WooCommerce HPOS Compatibility Test ==="
+          HPOS_CHECKS=0
+          TOTAL_CHECKS=3
+          
+          # Check bamero-production-core
+          if grep -q "custom_order_tables" wp-content/plugins/bamero-production-core/bamero-production-core.php; then
+            echo "✅ bamero-production-core: HPOS compatible"
+            HPOS_CHECKS=$((HPOS_CHECKS + 1))
+          else
+            echo "❌ bamero-production-core: HPOS compatibility not declared"
+          fi
+          
+          # Check bamero-mobile-auth
+          if grep -q "custom_order_tables" wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php; then
+            echo "✅ bamero-mobile-auth: HPOS compatible"
+            HPOS_CHECKS=$((HPOS_CHECKS + 1))
+          else
+            echo "❌ bamero-mobile-auth: HPOS compatibility not declared"
+          fi
+          
+          # Check bamero-zarinpal-gateway
+          if grep -q "custom_order_tables" wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php; then
+            echo "✅ bamero-zarinpal-gateway: HPOS compatible"
+            HPOS_CHECKS=$((HPOS_CHECKS + 1))
+          else
+            echo "❌ bamero-zarinpal-gateway: HPOS compatibility not declared"
+          fi
+          
+          # Check for WooCommerce gateway class
+          if grep -q "WC_Payment_Gateway" wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php; then
+            echo "✅ ZarinPal gateway extends WC_Payment_Gateway"
+          else
+            echo "❌ Missing WooCommerce gateway class"
+            exit 1
+          fi
+          
+          echo ""
+          echo "HPOS Compatibility: $HPOS_CHECKS/$TOTAL_CHECKS plugins"
+          if [ $HPOS_CHECKS -lt $TOTAL_CHECKS ]; then
+            echo "⚠️  Not all plugins declare HPOS compatibility"
+            exit 1
+          fi
 
   validation:
     name: File Structure Validation
@@ -124,7 +168,7 @@ jobs:
   final-check:
     name: Final Production Readiness
     runs-on: ubuntu-latest
-    needs: [php-syntax, security-check, woocommerce-check, validation]
+    needs: [php-syntax, php-lint, security-check, woocommerce-check, validation]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -133,17 +177,37 @@ jobs:
         run: |
           FILE_COUNT=$(git ls-files | wc -l)
           if [ "$FILE_COUNT" -gt 50 ]; then
-            echo "File count: $FILE_COUNT (expected <= 50)"
+            echo "❌ File count: $FILE_COUNT (expected <= 50)"
             exit 1
           fi
-          echo "File count: $FILE_COUNT (OK)"
+          echo "✅ File count: $FILE_COUNT (OK)"
 
       - name: Verify no README files
         run: |
           if git ls-files | grep -q "README"; then
-            echo "Found README files"
+            echo "❌ Found README files in repository"
             exit 1
           fi
+          echo "✅ No README files found"
+
+      - name: Verify no secrets in repository
+        run: |
+          # Check for potential secrets
+          SECRET_PATTERNS=(
+            "password.*="
+            "secret.*="
+            "api_key.*="
+            "merchant_id.*="
+            "DB_PASSWORD.*="
+          )
+          
+          for pattern in "${SECRET_PATTERNS[@]}"; do
+            if grep -r -E "$pattern" --include="*.php" --include="*.txt" --include="*.json" . | grep -v ".git" | grep -v "getenv\|\$_ENV\|\$_SERVER\|sanitize\|wp_unslash\|bamero_require_env"; then
+              echo "❌ Potential secret found matching pattern: $pattern"
+              exit 1
+            fi
+          done
+          echo "✅ No hardcoded secrets detected"
 
       - name: Production ready
         run: echo "✅ All checks passed - Production ready"

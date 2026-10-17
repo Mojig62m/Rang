@@ -15,6 +15,9 @@ jobs:
     environment:
       name: production
       url: ${{ secrets.PRODUCTION_URL }}
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout code
@@ -33,8 +36,20 @@ jobs:
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-          # Deploy using rsync
-          rsync -avz --delete --exclude='.git' --exclude='.github' ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          # Deploy using rsync - SAFE MODE
+          # Exclude: .git, .github, wp-config.php, uploads, and runtime data
+          rsync -avz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='wp-config.php' \
+            --exclude='wp-content/uploads/' \
+            --exclude='wp-content/cache/' \
+            --exclude='*.sql' \
+            --exclude='*.log' \
+            --exclude='.env*' \
+            --exclude='*.pem' \
+            --exclude='*.key' \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
 
           # Set permissions
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
@@ -52,7 +67,12 @@ jobs:
             # Run WordPress CLI commands if available
             if command -v wp &> /dev/null; then
               wp cache flush
-              wp cron event run --all
+              # ONLY run safe cron events - exclude potentially destructive ones
+              wp cron event run bamero_notification_worker
+              # Note: wp cron event run --all is disabled to prevent:
+              # - Unintended plugin updates
+              # - Scheduled posts publishing
+              # - Other automated actions that may not be safe during deployment
             fi
           "
 

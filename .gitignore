@@ -1,19 +1,77 @@
+# =============================================================================
+# BAMERO PRODUCTION .gitignore
+# NEVER commit files containing secrets, credentials, or runtime data
+# =============================================================================
+
+# Environment files - NEVER commit these
 .env
 .env.*
 !.env.example
 
+# Private keys and certificates - NEVER commit these
 *.pem
 *.key
 *.p12
 *.pfx
+*.crt
+*.cer
 
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build and dependency files
 __pycache__/
 *.py[cod]
-
 node_modules/
 vendor/
+composer.lock
 
+# Log files
 *.log
+*.sql
 
+# System files
 .DS_Store
 Thumbs.db
+
+# WordPress specific - NEVER commit these
+wp-config.php
+wp-config-*.php
+
+# Cache directories (runtime data)
+wp-content/cache/
+
+# Uploads directory (user-generated content)
+wp-content/uploads/
+
+# Local development files
+*.local
+*.dev
+*.test
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database dumps - NEVER commit these
+*.sql
+*.dump
+*.backup.sql
+
+# SSH keys - NEVER commit these
+id_rsa*
+id_ed25519*
+
+# Configuration files that may contain secrets
+config.ini
+config.inc.php
+settings.php

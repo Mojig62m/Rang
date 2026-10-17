@@ -46,6 +46,8 @@ jobs:
 
       - name: Check for non-production files
         run: |
+          # P2: Repository integrity check (non-blocking, informational)
+          echo "=== Repository Integrity Check (Informational) ==="
           NON_PROD_PATTERNS=(
             "docker"
             "scripts"
@@ -55,13 +57,24 @@ jobs:
             ".env*"
             "README*"
             "*.md"
+            "*.log"
+            "*.sql"
           )
 
+          FOUND_NON_PROD=0
           for pattern in "${NON_PROD_PATTERNS[@]}"; do
-            if find . -name "$pattern" -not -path "./.git/*" | read; then
-              echo "⚠️  Found non-production pattern: $pattern"
+            if find . -name "$pattern" -not -path "./.git/*" -not -path "./.github/*" | read; then
+              echo "⚠️  P2: Found non-production pattern: $pattern (informational)"
+              FOUND_NON_PROD=1
             fi
           done
+          
+          if [ $FOUND_NON_PROD -eq 0 ]; then
+            echo "✅ No non-production files detected"
+          fi
+          
+          # Note: This is informational only - does not block the workflow
+          # Production health monitoring is separate from repository integrity
 
       - name: Verify WordPress structure
         run: |
