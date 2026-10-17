@@ -11,6 +11,7 @@
 defined('ABSPATH') || exit;
 
 define('BAMERO_ZARINPAL_VERSION', '1.1.0');
+const BAMERO_JSON_CONTENT_TYPE = BAMERO_JSON_CONTENT_TYPE;
 
 /**
  * Declare High-Performance Order Storage (HPOS) compatibility.
@@ -178,7 +179,7 @@ function bamero_zarinpal_bootstrap() {
 
             $response = wp_remote_post($this->api_base . '/payment/request.json', array(
                 'timeout' => 20,
-                'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json'),
+                'headers' => array('Content-Type' => BAMERO_JSON_CONTENT_TYPE, 'Accept' => BAMERO_JSON_CONTENT_TYPE),
                 'body'    => wp_json_encode(array(
                     'merchant_id'  => $this->merchant_id,
                     'amount'       => $amount,
@@ -287,7 +288,7 @@ function bamero_zarinpal_bootstrap() {
 
             $response = wp_remote_post($this->api_base . '/payment/verify.json', array(
                 'timeout' => 20,
-                'headers' => array('Content-Type' => 'application/json', 'Accept' => 'application/json'),
+                'headers' => array('Content-Type' => BAMERO_JSON_CONTENT_TYPE, 'Accept' => BAMERO_JSON_CONTENT_TYPE),
                 'body'    => wp_json_encode(array(
                     'merchant_id' => $this->merchant_id,
                     'amount'      => $amount,

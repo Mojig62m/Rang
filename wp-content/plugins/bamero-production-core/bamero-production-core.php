@@ -12,6 +12,7 @@ defined('ABSPATH') || exit;
 
 const BAMERO_PRODUCTION_CORE_VERSION = '1.0.0';
 const BAMERO_CART_SELECTOR = '.bamero-mini-cart';
+const BAMERO_DATETIME_FORMAT = BAMERO_DATETIME_FORMAT;
 
 function bamero_request_id() {
     static $request_id = null;
@@ -512,7 +513,7 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
     if (is_wp_error($sealed)) {
         return $sealed;
     }
-    $expires = false !== stripos($template_key, 'otp') ? gmdate('Y-m-d H:i:s', time() + 600) : gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS);
+    $expires = false !== stripos($template_key, 'otp') ? gmdate(BAMERO_DATETIME_FORMAT, time() + 600) : gmdate(BAMERO_DATETIME_FORMAT, time() + DAY_IN_SECONDS);
     $ok = $wpdb->insert($table, array(
         'order_id' => (int) $order_id, 'user_id' => (int) $user_id, 'template_key' => sanitize_key($template_key),
         'payload_hash' => $payload_hash, 'status' => 'pending', 'max_retries' => max(1, (int) $max_retries),
@@ -610,7 +611,7 @@ function bamero_process_notification_outbox($limit = 20) {
         }
         $retry = (int) $row->retry_count + 1;
         $status = $retry >= (int) $row->max_retries ? 'failed' : 'pending';
-        $wpdb->update($table, array('status' => $status, 'retry_count' => $retry, 'last_error_code' => sanitize_key($result->get_error_code()), 'last_error_at' => $now, 'locked_at' => null, 'scheduled_at' => gmdate('Y-m-d H:i:s', time() + min(900, 15 * (2 ** min($retry, 6))),), 'updated_at' => $now), array('id' => $row->id));
+        $wpdb->update($table, array('status' => $status, 'retry_count' => $retry, 'last_error_code' => sanitize_key($result->get_error_code()), 'last_error_at' => $now, 'locked_at' => null, 'scheduled_at' => gmdate(BAMERO_DATETIME_FORMAT, time() + min(900, 15 * (2 ** min($retry, 6))),), 'updated_at' => $now), array('id' => $row->id));
     }
 }
 add_action('bamero_notification_worker', 'bamero_process_notification_outbox');
@@ -627,7 +628,7 @@ function bamero_purge_notification_outbox() {
     set_transient('bamero_outbox_purged', 1, DAY_IN_SECONDS);
     global $wpdb;
     $table = bamero_notification_table_name();
-    $cutoff = gmdate('Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS);
+    $cutoff = gmdate(BAMERO_DATETIME_FORMAT, time() - 30 * DAY_IN_SECONDS);
     // Finalized rows are never re-sent, so their sealed payload is no longer needed.
     $wpdb->query($wpdb->prepare("UPDATE {$table} SET payload_ciphertext = %s WHERE status IN ('sent','failed') AND payload_ciphertext <> %s LIMIT %d", '', '', 1000));
     $wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE status IN ('sent','failed') AND updated_at < %s LIMIT %d", $cutoff, 1000));

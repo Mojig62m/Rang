@@ -20,6 +20,9 @@ define('BAMERO_MOBILE_AUTH_RATE_LIMIT', 5);     // max OTP requests per phone pe
 define('BAMERO_MOBILE_AUTH_MAX_ATTEMPTS', 3);   // max verification attempts per OTP
 define('BAMERO_MOBILE_AUTH_LOCKOUT', 900);      // 15-minute lockout after repeated failed verifications
 define('BAMERO_MOBILE_AUTH_META_PHONE', 'bamero_verified_mobile');
+const BAMERO_NON_DIGIT_PATTERN = BAMERO_NON_DIGIT_PATTERN;
+const BAMERO_MOBILE_LABEL = '\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06cc\u0644';
+const BAMERO_RATE_LIMITED_MSG = '\u062a\u0639\u062f\u0627\u062f \u062f\u0631\u062e\u0648\u0627\u0633\u062a\u200c\u0647\u0627 \u0628\u06cc\u0634 \u0627\u0632 \u062d\u062f \u0645\u062c\u0627\u0632 \u0627\u0633\u062a. \u0628\u0639\u062f\u0627\u064b \u062a\u0644\u0627\u0634 \u06a9\u0646\u06cc\u062f.';
 
 /**
  * Normalize Iranian mobile to 989xxxxxxxxx (digits only, country code 98).
@@ -28,7 +31,7 @@ define('BAMERO_MOBILE_AUTH_META_PHONE', 'bamero_verified_mobile');
  * @return string|false Normalized phone or false.
  */
 function bamero_normalize_ir_mobile($raw) {
-    $digits = preg_replace('/\D+/', '', (string) $raw);
+    $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $raw);
     if ($digits === '') {
         return false;
     }
@@ -57,7 +60,7 @@ function bamero_auth_schema_validate($phone_raw, $otp_raw = null, $context = 'lo
         return new WP_Error('auth_schema_invalid', __('ساختار درخواست احراز هویت نامعتبر است.', 'bamero-mobile-auth'));
     }
     if (null !== $otp_raw) {
-        $otp = preg_replace('/\D+/', '', (string) $otp_raw);
+        $otp = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $otp_raw);
         if (strlen($otp) !== BAMERO_MOBILE_AUTH_OTP_LENGTH) {
             return new WP_Error('auth_schema_invalid', __('ساختار کد تأیید نامعتبر است.', 'bamero-mobile-auth'));
         }
@@ -116,14 +119,14 @@ function bamero_request_otp($phone_raw, $context = 'login') {
     $lock_name = 'bamero_otp_rl_' . md5($phone);
     $got_lock  = (int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 2)', $lock_name));
     if (1 !== $got_lock) {
-        return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
+        return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
     }
 
     try {
         foreach (array($phone_key => BAMERO_MOBILE_AUTH_RATE_LIMIT, $ip_key => BAMERO_MOBILE_AUTH_RATE_LIMIT * 3, $global_key => 1000) as $rk => $limit) {
             $count = (int) get_transient($rk);
             if ($count >= $limit) {
-                return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
+                return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
             }
         }
         foreach (array($phone_key, $ip_key, $global_key) as $rk) {
@@ -180,7 +183,7 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
         return $schema;
     }
     $phone = $schema['phone'];
-    $otp = preg_replace('/\D+/', '', (string) $otp_raw);
+    $otp = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $otp_raw);
 
     // H3: serialize the attempt counter per phone with a MySQL named lock so
     // concurrent submissions can never exceed MAX_ATTEMPTS (same pattern as
@@ -189,7 +192,7 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
     $verify_lock = 'bamero_otp_vf_' . md5($phone);
     $got_lock = (int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 2)', $verify_lock));
     if (1 !== $got_lock) {
-        return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
+        return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
     }
 
     try {
@@ -490,7 +493,7 @@ function bamero_mobile_auth_shortcode() {
                 <input type="hidden" name="action" value="bamero_request_otp">
                 <input type="hidden" name="context" value="login">
                 <p>
-                    <label for="bamero-login-mobile"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-login-mobile"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-login-mobile" name="mobile" required
                            inputmode="numeric" autocomplete="tel"
                            placeholder="09123456789"
@@ -503,7 +506,7 @@ function bamero_mobile_auth_shortcode() {
                 <input type="hidden" name="action" value="bamero_verify_otp">
                 <input type="hidden" name="context" value="login">
                 <p>
-                    <label for="bamero-login-mobile2"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-login-mobile2"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-login-mobile2" name="mobile" required value="<?php echo esc_attr($mobile_q); ?>">
                 </p>
                 <p>
@@ -522,7 +525,7 @@ function bamero_mobile_auth_shortcode() {
                 <input type="hidden" name="action" value="bamero_request_otp">
                 <input type="hidden" name="context" value="register">
                 <p>
-                    <label for="bamero-reg-mobile"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-reg-mobile"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-reg-mobile" name="mobile" required inputmode="numeric" autocomplete="tel" placeholder="09123456789">
                 </p>
                 <button type="submit" class="button"><?php echo esc_html__('دریافت کد تأیید', 'bamero-mobile-auth'); ?></button>
@@ -532,7 +535,7 @@ function bamero_mobile_auth_shortcode() {
                 <input type="hidden" name="action" value="bamero_verify_otp">
                 <input type="hidden" name="context" value="register">
                 <p>
-                    <label for="bamero-reg-mobile2"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-reg-mobile2"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-reg-mobile2" name="mobile" required>
                 </p>
                 <p>

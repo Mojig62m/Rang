@@ -13,6 +13,13 @@
 
 defined('ABSPATH') || exit;
 
+// Schema constants
+const BAMERO_ORG_NAME = '\u0628\u0627\u0645\u0631\u0648';
+const BAMERO_SCHEMA_GRAPH = BAMERO_SCHEMA_GRAPH;
+const BAMERO_SCHEMA_TYPE = BAMERO_SCHEMA_TYPE;
+const BAMERO_SCHEMA_ORG = BAMERO_SCHEMA_ORG;
+const BAMERO_ORG_LOCATION = '\u0627\u0635\u0641\u0647\u0627\u0646';
+
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -230,7 +237,7 @@ function bamero_output_meta_tags() {
     }
     $og = array(
         'og:locale'      => 'fa_IR',
-        'og:site_name'   => get_bloginfo('name') ?: 'بامرو',
+        'og:site_name'   => get_bloginfo('name') ?: BAMERO_ORG_NAME,
         'og:type'        => $type,
         'og:title'       => $title,
         'og:description' => $description,
@@ -314,7 +321,7 @@ function bamero_output_entity_graph() {
         return;
     }
 
-    $site_name = get_bloginfo('name') ?: 'بامرو';
+    $site_name = get_bloginfo('name') ?: BAMERO_ORG_NAME;
     $site_url  = home_url('/');
     $logo      = BAMERO_THEME_DIR . '/images/logo.svg';
     $phone     = bamero_phone_e164();
@@ -322,14 +329,14 @@ function bamero_output_entity_graph() {
 
     $graph = array(
         '@context' => 'https://schema.org',
-        '@graph'   => array(
+        BAMERO_SCHEMA_GRAPH   => array(
             array(
-                '@type' => 'Organization',
-                '@id'   => $site_url . '#organization',
+                BAMERO_SCHEMA_TYPE => 'Organization',
+                '@id'   => $site_url . BAMERO_SCHEMA_ORG,
                 'name'  => $site_name,
                 'url'   => $site_url,
                 'logo'  => array(
-                    '@type'  => 'ImageObject',
+                    BAMERO_SCHEMA_TYPE  => 'ImageObject',
                     'url'    => $logo,
                     'width'  => 512,
                     'height' => 512,
@@ -339,7 +346,7 @@ function bamero_output_entity_graph() {
                     esc_url_raw((string) get_theme_mod('bamero_telegram_url', '')),
                 ))),
                 'contactPoint' => array(
-                    '@type'       => 'ContactPoint',
+                    BAMERO_SCHEMA_TYPE       => 'ContactPoint',
                     'telephone'   => $phone,
                     'contactType' => 'customer service',
                     'areaServed'  => 'IR',
@@ -347,7 +354,7 @@ function bamero_output_entity_graph() {
                 ),
             ),
             array(
-                '@type' => 'LocalBusiness',
+                BAMERO_SCHEMA_TYPE => 'LocalBusiness',
                 '@id'   => $site_url . '#localbusiness',
                 'name'  => $site_name,
                 'image' => $logo,
@@ -355,43 +362,43 @@ function bamero_output_entity_graph() {
                 'telephone' => $phone,
                 'priceRange' => '$$',
                 'address' => array(
-                    '@type'           => 'PostalAddress',
+                    BAMERO_SCHEMA_TYPE           => 'PostalAddress',
                     'streetAddress'   => $address,
-                    'addressLocality' => 'اصفهان',
-                    'addressRegion'   => 'اصفهان',
+                    'addressLocality' => BAMERO_ORG_LOCATION,
+                    'addressRegion'   => BAMERO_ORG_LOCATION,
                     'addressCountry'  => 'IR',
                 ),
                 'areaServed' => array(
-                    array('@type' => 'City', 'name' => 'اصفهان'),
-                    array('@type' => 'Country', 'name' => 'ایران'),
+                    array(BAMERO_SCHEMA_TYPE => 'City', 'name' => BAMERO_ORG_LOCATION),
+                    array(BAMERO_SCHEMA_TYPE => 'Country', 'name' => 'ایران'),
                 ),
                 'openingHoursSpecification' => array(
                     array(
-                        '@type'     => 'OpeningHoursSpecification',
+                        BAMERO_SCHEMA_TYPE     => 'OpeningHoursSpecification',
                         'dayOfWeek' => array('Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'),
                         'opens'     => '08:00',
                         'closes'    => '17:00',
                     ),
                     array(
-                        '@type'     => 'OpeningHoursSpecification',
+                        BAMERO_SCHEMA_TYPE     => 'OpeningHoursSpecification',
                         'dayOfWeek' => 'Thursday',
                         'opens'     => '08:00',
                         'closes'    => '14:00',
                     ),
                 ),
-                'parentOrganization' => array('@id' => $site_url . '#organization'),
+                'parentOrganization' => array('@id' => $site_url . BAMERO_SCHEMA_ORG),
             ),
             array(
-                '@type' => 'WebSite',
+                BAMERO_SCHEMA_TYPE => 'WebSite',
                 '@id'   => $site_url . '#website',
                 'url'   => $site_url,
                 'name'  => $site_name,
                 'inLanguage' => 'fa-IR',
-                'publisher'  => array('@id' => $site_url . '#organization'),
+                'publisher'  => array('@id' => $site_url . BAMERO_SCHEMA_ORG),
                 'potentialAction' => array(
-                    '@type'       => 'SearchAction',
+                    BAMERO_SCHEMA_TYPE       => 'SearchAction',
                     'target'      => array(
-                        '@type'       => 'EntryPoint',
+                        BAMERO_SCHEMA_TYPE       => 'EntryPoint',
                         'urlTemplate' => $site_url . '?s={search_term_string}&post_type=product',
                     ),
                     'query-input' => 'required name=search_term_string',
@@ -405,18 +412,18 @@ function bamero_output_entity_graph() {
     $latitude  = bamero_sanitize_coordinate(get_theme_mod('bamero_geo_latitude', '32.666756'));
     $longitude = bamero_sanitize_coordinate(get_theme_mod('bamero_geo_longitude', '51.644733'), (object) array('id' => 'bamero_geo_longitude'));
     if ($latitude !== '' && $longitude !== '') {
-        $graph['@graph'][1]['geo'] = array(
-            '@type'     => 'GeoCoordinates',
+        $graph[BAMERO_SCHEMA_GRAPH][1]['geo'] = array(
+            BAMERO_SCHEMA_TYPE     => 'GeoCoordinates',
             'latitude'  => (float) $latitude,
             'longitude' => (float) $longitude,
         );
     }
     $maps_url = esc_url_raw((string) get_theme_mod('bamero_maps_url', ''));
     if ($maps_url !== '') {
-        $graph['@graph'][1]['hasMap'] = $maps_url;
+        $graph[BAMERO_SCHEMA_GRAPH][1]['hasMap'] = $maps_url;
     }
     if ($phone === '') {
-        unset($graph['@graph'][0]['contactPoint'], $graph['@graph'][1]['telephone']);
+        unset($graph[BAMERO_SCHEMA_GRAPH][0]['contactPoint'], $graph[BAMERO_SCHEMA_GRAPH][1]['telephone']);
     }
 
     // Product entity on single product (E-E-A-T + rich results).
@@ -438,7 +445,7 @@ function bamero_output_entity_graph() {
 
             $brand_name = trim((string) $product->get_meta('_product_brand'));
             $entity = array(
-                '@type'       => 'Product',
+                BAMERO_SCHEMA_TYPE       => 'Product',
                 '@id'         => $permalink . '#product',
                 'name'        => $product->get_name(),
                 'url'         => $permalink,
@@ -447,8 +454,8 @@ function bamero_output_entity_graph() {
                 'image'       => array_values(array_unique($images)),
                 'category'    => $main_term ? implode(' > ', wp_list_pluck(bamero_seo_term_trail($main_term), 'name')) : '',
                 'brand'       => array(
-                    '@type' => 'Brand',
-                    'name'  => $brand_name !== '' ? $brand_name : 'بامرو',
+                    BAMERO_SCHEMA_TYPE => 'Brand',
+                    'name'  => $brand_name !== '' ? $brand_name : BAMERO_ORG_NAME,
                 ),
             );
 
@@ -463,7 +470,7 @@ function bamero_output_entity_graph() {
                 }
                 $sale_end = $product->is_on_sale() ? $product->get_date_on_sale_to() : null;
                 $entity['offers'] = array(
-                    '@type'           => 'Offer',
+                    BAMERO_SCHEMA_TYPE           => 'Offer',
                     'url'             => $permalink,
                     'priceCurrency'   => get_woocommerce_currency(),
                     'price'           => wc_format_decimal($product->get_price(), 2),
@@ -471,14 +478,14 @@ function bamero_output_entity_graph() {
                     'priceValidUntil' => $sale_end ? $sale_end->date('Y-m-d') : gmdate('Y-12-31', time() + YEAR_IN_SECONDS),
                     'itemCondition'   => 'https://schema.org/NewCondition',
                     'availability'    => $availability,
-                    'seller'          => array('@id' => $site_url . '#organization'),
+                    'seller'          => array('@id' => $site_url . BAMERO_SCHEMA_ORG),
                 );
             }
 
             // Ratings/reviews: only real, approved customer reviews — never synthesised.
             if (wc_review_ratings_enabled() && $product->get_review_count() > 0 && (float) $product->get_average_rating() > 0) {
                 $entity['aggregateRating'] = array(
-                    '@type'       => 'AggregateRating',
+                    BAMERO_SCHEMA_TYPE       => 'AggregateRating',
                     'ratingValue' => wc_format_decimal($product->get_average_rating(), 1),
                     'reviewCount' => (int) $product->get_review_count(),
                     'bestRating'  => 5,
@@ -496,16 +503,16 @@ function bamero_output_entity_graph() {
                         continue;
                     }
                     $entity['review'][] = array(
-                        '@type'         => 'Review',
-                        'author'        => array('@type' => 'Person', 'name' => get_comment_author($review)),
+                        BAMERO_SCHEMA_TYPE         => 'Review',
+                        'author'        => array(BAMERO_SCHEMA_TYPE => 'Person', 'name' => get_comment_author($review)),
                         'datePublished' => mysql2date('Y-m-d', $review->comment_date_gmt),
                         'reviewBody'    => bamero_seo_clean_text($review->comment_content, 1000),
-                        'reviewRating'  => array('@type' => 'Rating', 'ratingValue' => $rating, 'bestRating' => 5, 'worstRating' => 1),
+                        'reviewRating'  => array(BAMERO_SCHEMA_TYPE => 'Rating', 'ratingValue' => $rating, 'bestRating' => 5, 'worstRating' => 1),
                     );
                 }
             }
 
-            $graph['@graph'][] = array_filter($entity, static function ($value) {
+            $graph[BAMERO_SCHEMA_GRAPH][] = array_filter($entity, static function ($value) {
                 return $value !== '' && $value !== array();
             });
         }
@@ -543,14 +550,14 @@ function bamero_output_entity_graph() {
             $crumbs = array();
             foreach ($trail as $index => $crumb) {
                 $crumbs[] = array(
-                    '@type'    => 'ListItem',
+                    BAMERO_SCHEMA_TYPE    => 'ListItem',
                     'position' => $index + 1,
                     'name'     => wp_strip_all_tags((string) $crumb['name']),
                     'item'     => $crumb['item'],
                 );
             }
-            $graph['@graph'][] = array(
-                '@type'           => 'BreadcrumbList',
+            $graph[BAMERO_SCHEMA_GRAPH][] = array(
+                BAMERO_SCHEMA_TYPE           => 'BreadcrumbList',
                 'itemListElement' => $crumbs,
             );
         }
