@@ -10,7 +10,7 @@
 ✅ قرارداد .github/copilot-agent-contract.md موجود؟
 ✅ main branch تازه است؟ (git fetch origin main)
 ✅ production_gate.sh pass می‌کند؟
-✅ PR #7, #18, #21 بلاک‌کننده‌ای هستند؟
+✅ PR بازِ همپوشان با موضوع ایشو وجود ندارد؟
 ```
 
 ---
