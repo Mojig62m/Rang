@@ -80,7 +80,7 @@ gh pr list --state open
 **مرحلهٔ ۱: گیت دستی**
 ```bash
 # ۱. بررسی شرط‌های دسترسی‌ناپذیری (بخش ۳.۱)
-gh pr list --state open | gh pr list --state open
+gh pr list --state open
 
 # ۲. اگر باز است: توقف و پاسخ دهید:
 # "ایشوی #X وابسته است به PR #Y که هنوز باز است. منتظر merge بمانید."
@@ -207,7 +207,7 @@ bash tests/production_gate.sh
 # سطح پیچیدگی Low–Medium است؟ ✅ (فقط CSS)
 
 # PR‌های باز دارند؟
-gh pr list --state open | gh pr list --state open
+gh pr list --state open
 # خروجی: خالی (هیچ‌یک باز نیست) ✅
 ```
 
