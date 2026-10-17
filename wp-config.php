@@ -154,16 +154,39 @@ $dfm = getenv('DISALLOW_FILE_MODS');
 define('DISALLOW_FILE_MODS', filter_var($dfm !== false ? $dfm : '1', FILTER_VALIDATE_BOOLEAN));
 define('FORCE_SSL_ADMIN', true);
 $bamero_wp_cache = getenv('WP_CACHE');
-define('WP_CACHE', filter_var($bamero_wp_cache !== false ? $bamero_wp_cache : '0', FILTER_VALIDATE_BOOLEAN));
+// Production: Force WP_CACHE to true for production deployment
+// Can be overridden via environment variable WP_CACHE=false for development
+define('WP_CACHE', filter_var($bamero_wp_cache !== false ? $bamero_wp_cache : '1', FILTER_VALIDATE_BOOLEAN));
 define('CONCATENATE_SCRIPTS', false);
 
 /**
- * Optional: disable WordPress in-request cron when the host schedules a real
- * cron job (recommended for production; see GO_LIVE_RUNBOOK_FA.md, section 3).
- * Leave unset or 0 to keep the WordPress default behavior.
+ * Redis Object Cache configuration for production
+ * Enable via environment variables:
+ * - WP_REDIS_HOST: Redis server hostname (default: 127.0.0.1)
+ * - WP_REDIS_PORT: Redis server port (default: 6379)
+ * - WP_REDIS_TIMEOUT: Connection timeout in seconds (default: 1)
+ * - WP_REDIS_PREFIX: Cache key prefix (default: wp_)
+ */
+$redis_host = getenv('WP_REDIS_HOST') ?: '127.0.0.1';
+$redis_port = getenv('WP_REDIS_PORT') ?: 6379;
+$redis_timeout = (int) (getenv('WP_REDIS_TIMEOUT') ?: 1);
+$redis_prefix = getenv('WP_REDIS_PREFIX') ?: 'wp_';
+
+if (extension_loaded('redis') && class_exists('Redis')) {
+    define('WP_REDIS_HOST', $redis_host);
+    define('WP_REDIS_PORT', $redis_port);
+    define('WP_REDIS_TIMEOUT', $redis_timeout);
+    define('WP_REDIS_PREFIX', $redis_prefix);
+    define('WP_CACHE_KEY_SALT', $redis_prefix);
+}
+
+/**
+ * Production: disable WordPress in-request cron when the host schedules a real
+ * cron job (recommended for production). Forced to true for production deployment.
+ * Can be overridden via environment variable DISABLE_WP_CRON=false for development.
  */
 $bamero_disable_cron = getenv('DISABLE_WP_CRON');
-define('DISABLE_WP_CRON', filter_var($bamero_disable_cron !== false ? $bamero_disable_cron : '0', FILTER_VALIDATE_BOOLEAN));
+define('DISABLE_WP_CRON', filter_var($bamero_disable_cron !== false ? $bamero_disable_cron : '1', FILTER_VALIDATE_BOOLEAN));
 
 define('EMPTY_TRASH_DAYS', 14);
 define('WP_POST_REVISIONS', 5);
@@ -174,6 +197,23 @@ define('WP_MAX_MEMORY_LIMIT', '512M');
 $env_type = getenv('WP_ENVIRONMENT_TYPE');
 if ($env_type !== false && $env_type !== '') {
     define('WP_ENVIRONMENT_TYPE', $env_type);
+} else {
+    // Default to production environment for security hardening
+    define('WP_ENVIRONMENT_TYPE', 'production');
+}
+
+/**
+ * CDN Configuration for production
+ * Enable via environment variables:
+ * - CDN_URL: Full CDN base URL (e.g., https://cdn.yourdomain.com)
+ * - CDN_ENABLED: Set to 'true' to enable CDN (default: false)
+ */
+$cdn_enabled = getenv('CDN_ENABLED') ?: false;
+$cdn_url = getenv('CDN_URL') ?: '';
+
+if (filter_var($cdn_enabled, FILTER_VALIDATE_BOOLEAN) && !empty($cdn_url)) {
+    define('BAMERO_CDN_ENABLED', true);
+    define('BAMERO_CDN_URL', rtrim($cdn_url, '/'));
 }
 
 require_once ABSPATH . 'wp-settings.php';
