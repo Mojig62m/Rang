@@ -1,0 +1,174 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install security tools
+        run: |
+          composer global require phpsecuritycalculator/phpsecuritycalculator
+          echo "$(composer global config home)/vendor/bin" >> $GITHUB_PATH
+
+      - name: Check for hardcoded credentials
+        run: |
+          # Check for hardcoded passwords
+          if grep -r -E "(password|secret|api_key|merchant_id)" --include="*.php" . | grep -v "getenv\|\$_ENV\|\$_SERVER\|sanitize\|wp_unslash"; then
+            echo "⚠️  Potential hardcoded credentials found"
+            exit 1
+          fi
+
+      - name: Check for eval() usage
+        run: |
+          if grep -r "eval(" --include="*.php" .; then
+            echo "❌ eval() function found"
+            exit 1
+          fi
+
+      - name: Check for unescaped output
+        run: |
+          # Check for echo without esc_html
+          if grep -r "echo " --include="*.php" . | grep -v "esc_html\|esc_attr\|esc_url\|wp_kses" | head -20; then
+            echo "⚠️  Potential unescaped output found"
+          fi
+
+      - name: Check for missing nonce verification
+        run: |
+          # Check for wp_verify_nonce in form handlers
+          FORM_FILES=$(grep -r "wp_verify_nonce\|check_admin_referer" --include="*.php" . | wc -l)
+          if [ "$FORM_FILES" -lt 5 ]; then
+            echo "⚠️  Potential missing nonce verification"
+          fi
+
+      - name: Check security headers
+        run: |
+          # Verify .htaccess has security headers
+          if [ -f .htaccess ]; then
+            grep -q "X-Content-Type-Options" .htaccess
+            grep -q "X-Frame-Options" .htaccess
+            grep -q "Strict-Transport-Security" .htaccess
+            grep -q "X-XSS-Protection" .htaccess || true
+          fi
+
+      - name: Check CSP implementation
+        run: |
+          # Check for CSP headers
+          if [ -f wp-content/plugins/bamero-production-core/bamero-production-core.php ]; then
+            grep -q "Content-Security-Policy" wp-content/plugins/bamero-production-core/bamero-production-core.php
+            grep -q "bamero_csp_nonce" wp-content/plugins/bamero-production-core/bamero-production-core.php
+          fi
+
+  rate-limit-check:
+    name: Rate Limiting Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check rate limiting implementation
+        run: |
+          # Check for rate limiting functions
+          if [ -f wp-content/plugins/bamero-production-core/bamero-production-core.php ]; then
+            grep -q "bamero_rate_limit" wp-content/plugins/bamero-production-core/bamero-production-core.php
+            grep -q "GET_LOCK" wp-content/plugins/bamero-production-core/bamero-production-core.php
+          fi
+
+          # Check mobile auth rate limiting
+          if [ -f wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php ]; then
+            grep -q "BAMERO_MOBILE_AUTH_RATE_LIMIT" wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php
+            grep -q "GET_LOCK" wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php
+          fi
+
+  database-security:
+    name: Database Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for SQL injection prevention
+        run: |
+          # Check for prepared statements
+          if grep -r "\$wpdb->prepare" --include="*.php" . | wc -l | awk '{print $1}' | grep -q "0"; then
+            echo "⚠️  No prepared statements found"
+          fi
+
+          # Check for direct SQL queries
+          DIRECT_QUERIES=$(grep -r "\$wpdb->query\|\$wpdb->get_results" --include="*.php" . | grep -v "prepare" | wc -l)
+          if [ "$DIRECT_QUERIES" -gt 5 ]; then
+            echo "⚠️  Found $DIRECT_QUERIES direct SQL queries"
+          fi
+
+      - name: Check table prefix usage
+        run: |
+          # Check for hardcoded table names
+          if grep -r "wp_posts\|wp_users\|wp_options" --include="*.php" . | grep -v "\$wpdb->prefix\|\$table_prefix"; then
+            echo "⚠️  Hardcoded table names found"
+          fi
+
+  file-permissions:
+    name: File Permissions Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check .htaccess blocks sensitive files
+        run: |
+          if [ -f .htaccess ]; then
+            grep -q "wp-config\.php" .htaccess
+            grep -q "xmlrpc\.php" .htaccess
+            grep -q "readme\.html" .htaccess
+            grep -q "\.env" .htaccess
+          fi
+
+      - name: Check for sensitive file exposure
+        run: |
+          # Check for .env files
+          if find . -name ".env*" -not -path "./.git/*" | read; then
+            echo "❌ .env files found in repository"
+            exit 1
+          fi
+
+          # Check for config files
+          if find . -name "wp-config.php" -not -path "./.git/*" | read; then
+            echo "⚠️  wp-config.php in repository (should be in .gitignore)"
+          fi
+
+  final-security-report:
+    name: Security Audit Report
+    runs-on: ubuntu-latest
+    needs: [security-scan, rate-limit-check, database-security, file-permissions]
+    steps:
+      - name: Generate security report
+        run: |
+          echo "### Security Audit Report" > security-report.md
+          echo "" >> security-report.md
+          echo "**Generated:** $(date)" >> security-report.md
+          echo "**Repository:** ${{ github.repository }}" >> security-report.md
+          echo "**Commit:** ${{ github.sha }}" >> security-report.md
+          echo "" >> security-report.md
+          echo "✅ All security checks passed" >> security-report.md
+          echo "" >> security-report.md
+          echo "**Recommendations:**" >> security-report.md
+          echo "- Keep WordPress and plugins updated" >> security-report.md
+          echo "- Use HTTPS everywhere" >> security-report.md
+          echo "- Monitor for security vulnerabilities" >> security-report.md
+          echo "- Regular backups" >> security-report.md
+          cat security-report.md

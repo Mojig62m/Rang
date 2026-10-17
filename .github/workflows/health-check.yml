@@ -1,0 +1,181 @@
+name: Health Check
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+
+jobs:
+  health-monitor:
+    name: Health Monitor
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          # List of required production files
+          REQUIRED_FILES=(
+            "wp-config.php"
+            ".htaccess"
+            "robots.txt"
+            "wp-content/plugins/bamero-production-core/bamero-production-core.php"
+            "wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php"
+            "wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php"
+          )
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required files present"
+
+      - name: Check file count
+        run: |
+          FILE_COUNT=$(find . -type f -not -path "./.git/*" -not -path "./.github/*" | wc -l)
+          echo "Total files: $FILE_COUNT"
+          if [ "$FILE_COUNT" -gt 50 ]; then
+            echo "⚠️  File count exceeds 50"
+          else
+            echo "✅ File count is optimal"
+          fi
+
+      - name: Check for non-production files
+        run: |
+          NON_PROD_PATTERNS=(
+            "docker"
+            "scripts"
+            "docs"
+            "tests"
+            "Makefile"
+            ".env*"
+            "README*"
+            "*.md"
+          )
+
+          for pattern in "${NON_PROD_PATTERNS[@]}"; do
+            if find . -name "$pattern" -not -path "./.git/*" | read; then
+              echo "⚠️  Found non-production pattern: $pattern"
+            fi
+          done
+
+      - name: Verify WordPress structure
+        run: |
+          # Check for WordPress core files
+          [ -d "wp-content" ] || { echo "❌ Missing wp-content"; exit 1; }
+          [ -d "wp-content/plugins" ] || { echo "❌ Missing plugins"; exit 1; }
+          [ -d "wp-content/themes" ] || { echo "❌ Missing themes"; exit 1; }
+          echo "✅ WordPress structure valid"
+
+      - name: Verify theme structure
+        run: |
+          THEME_DIR="wp-content/themes/bamero"
+          [ -d "$THEME_DIR" ] || { echo "❌ Missing bamero theme"; exit 1; }
+          [ -f "$THEME_DIR/functions.php" ] || { echo "❌ Missing theme functions.php"; exit 1; }
+          [ -f "$THEME_DIR/style.css" ] || { echo "❌ Missing theme style.css"; exit 1; }
+          [ -d "$THEME_DIR/inc" ] || { echo "❌ Missing theme inc directory"; exit 1; }
+          echo "✅ Theme structure valid"
+
+  plugin-check:
+    name: Plugin Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required plugins
+        run: |
+          REQUIRED_PLUGINS=(
+            "bamero-production-core"
+            "bamero-mobile-auth"
+            "bamero-zarinpal-gateway"
+          )
+
+          for plugin in "${REQUIRED_PLUGINS[@]}"; do
+            if [ ! -d "wp-content/plugins/$plugin" ]; then
+              echo "❌ Missing plugin: $plugin"
+              exit 1
+            fi
+            if [ ! -f "wp-content/plugins/$plugin/${plugin}.php" ]; then
+              echo "❌ Missing plugin main file: $plugin"
+              exit 1
+            fi
+          done
+          echo "✅ All required plugins present"
+
+      - name: Check plugin headers
+        run: |
+          for plugin in wp-content/plugins/bamero-*; do
+            if [ -f "$plugin/${plugin##*/}.php" ]; then
+              grep -q "Plugin Name:" "$plugin/${plugin##*/}.php" || echo "⚠️  Missing plugin header: $plugin"
+            fi
+          done
+
+  configuration-check:
+    name: Configuration Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check wp-config.php
+        run: |
+          if [ -f wp-config.php ]; then
+            # Check for required constants
+            grep -q "DB_NAME" wp-config.php || { echo "❌ Missing DB_NAME"; exit 1; }
+            grep -q "DB_USER" wp-config.php || { echo "❌ Missing DB_USER"; exit 1; }
+            grep -q "DB_PASSWORD" wp-config.php || { echo "❌ Missing DB_PASSWORD"; exit 1; }
+            grep -q "DB_HOST" wp-config.php || { echo "❌ Missing DB_HOST"; exit 1; }
+            
+            # Check for security constants
+            grep -q "DISALLOW_FILE_EDIT" wp-config.php || echo "⚠️  Missing DISALLOW_FILE_EDIT"
+            grep -q "DISALLOW_FILE_MODS" wp-config.php || echo "⚠️  Missing DISALLOW_FILE_MODS"
+            grep -q "FORCE_SSL_ADMIN" wp-config.php || echo "⚠️  Missing FORCE_SSL_ADMIN"
+            
+            # Check for production settings
+            grep -q "WP_CACHE" wp-config.php || echo "⚠️  Missing WP_CACHE"
+            grep -q "DISABLE_WP_CRON" wp-config.php || echo "⚠️  Missing DISABLE_WP_CRON"
+            
+            echo "✅ wp-config.php validation passed"
+          fi
+
+      - name: Check .htaccess
+        run: |
+          if [ -f .htaccess ]; then
+            grep -q "Options -Indexes" .htaccess || echo "⚠️  Missing Options -Indexes"
+            grep -q "RewriteEngine On" .htaccess || echo "⚠️  Missing RewriteEngine"
+            grep -q "xmlrpc" .htaccess || echo "⚠️  Missing XML-RPC block"
+            echo "✅ .htaccess validation passed"
+          fi
+
+      - name: Check robots.txt
+        run: |
+          if [ -f robots.txt ]; then
+            grep -q "User-agent" robots.txt || { echo "❌ Invalid robots.txt"; exit 1; }
+            grep -q "Disallow" robots.txt || { echo "❌ Invalid robots.txt"; exit 1; }
+            echo "✅ robots.txt validation passed"
+          fi
+
+  final-health-report:
+    name: Health Check Report
+    runs-on: ubuntu-latest
+    needs: [health-monitor, plugin-check, configuration-check]
+    steps:
+      - name: Generate health report
+        run: |
+          echo "### Health Check Report" > health-report.md
+          echo "" >> health-report.md
+          echo "**Generated:** $(date)" >> health-report.md
+          echo "**Repository:** ${{ github.repository }}" >> health-report.md
+          echo "**Commit:** ${{ github.sha }}" >> health-report.md
+          echo "" >> health-report.md
+          echo "✅ All health checks passed" >> health-report.md
+          echo "" >> health-report.md
+          echo "**File Count:** $(find . -type f -not -path "./.git/*" | wc -l)" >> health-report.md
+          echo "**Plugin Count:** $(ls -1 wp-content/plugins/ 2>/dev/null | wc -l)" >> health-report.md
+          echo "**Theme Count:** $(ls -1 wp-content/themes/ 2>/dev/null | wc -l)" >> health-report.md
+          cat health-report.md

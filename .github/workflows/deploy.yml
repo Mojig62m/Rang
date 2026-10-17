@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
+
+jobs:
+  deploy:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        run: |
+          # Add server to known hosts
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          # Deploy using rsync
+          rsync -avz --delete --exclude='.git' --exclude='.github' ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+
+          # Set permissions
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+            cd ${{ secrets.DEPLOY_PATH }}
+            chmod -R 755 wp-content
+            chmod 644 wp-config.php
+            chmod 644 .htaccess
+            chmod 644 robots.txt
+          "
+
+      - name: Run post-deploy scripts
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+            cd ${{ secrets.DEPLOY_PATH }}
+            # Run WordPress CLI commands if available
+            if command -v wp &> /dev/null; then
+              wp cache flush
+              wp cron event run --all
+            fi
+          "
+
+      - name: Verify deployment
+        run: |
+          # Simple HTTP check
+          for i in {1..10}; do
+            if curl -s -o /dev/null -w "%{http_code}" ${{ secrets.PRODUCTION_URL }} | grep -q "200"; then
+              echo "✅ Deployment verified"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "❌ Deployment verification failed"
+          exit 1
+
+  notify:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Send Telegram notification
+        if: success()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=🚀 Deployment successful: ${{ github.repository }}@${{ github.sha }}"
+          fi
+
+      - name: Send failure notification
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=❌ Deployment failed: ${{ github.repository }}@${{ github.sha }}"
+          fi

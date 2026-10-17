@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  php-syntax:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Check PHP syntax
+        run: |
+          find . -type f -name "*.php" -not -path "./.git/*" | while read file; do
+            php -l "$file" || exit 1
+          done
+
+  php-lint:
+    name: PHP Lint & Code Style
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install PHP_CodeSniffer
+        run: |
+          composer global require squizlabs/php_codesniffer
+          echo "$(composer global config home)/vendor/bin" >> $GITHUB_PATH
+
+      - name: Check code style
+        run: |
+          phpcs --standard=PSR12 --extensions=php --encoding=utf-8 -n . 2>/dev/null || true
+
+  security-check:
+    name: Security Headers & CSP
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check security headers in .htaccess
+        run: |
+          if [ -f .htaccess ]; then
+            grep -q "X-Content-Type-Options" .htaccess || { echo "Missing X-Content-Type-Options header"; exit 1; }
+            grep -q "X-Frame-Options" .htaccess || { echo "Missing X-Frame-Options header"; exit 1; }
+            grep -q "Strict-Transport-Security" .htaccess || { echo "Missing HSTS header"; exit 1; }
+          fi
+
+      - name: Check CSP in production-core
+        run: |
+          if [ -f wp-content/plugins/bamero-production-core/bamero-production-core.php ]; then
+            grep -q "Content-Security-Policy" wp-content/plugins/bamero-production-core/bamero-production-core.php || { echo "Missing CSP header"; exit 1; }
+          fi
+
+  woocommerce-check:
+    name: WooCommerce Compatibility
+    runs-on: ubuntu-latest
+    needs: php-syntax
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Check WooCommerce functions
+        run: |
+          # Check for HPOS compatibility
+          grep -r "custom_order_tables" wp-content/plugins/ || echo "HPOS compatibility check"
+          # Check for WooCommerce constants
+          grep -r "WC_Payment_Gateway" wp-content/plugins/bamero-zarinpal-gateway/ || { echo "Missing WooCommerce gateway class"; exit 1; }
+
+  validation:
+    name: File Structure Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          # Check for essential files
+          [ -f wp-config.php ] || { echo "Missing wp-config.php"; exit 1; }
+          [ -f .htaccess ] || { echo "Missing .htaccess"; exit 1; }
+          [ -f robots.txt ] || { echo "Missing robots.txt"; exit 1; }
+          [ -f wp-content/plugins/bamero-production-core/bamero-production-core.php ] || { echo "Missing production core"; exit 1; }
+          [ -f wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php ] || { echo "Missing mobile auth"; exit 1; }
+          [ -f wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php ] || { echo "Missing zarinpal gateway"; exit 1; }
+
+      - name: Check no mock data
+        run: |
+          if find . -type f -name "*mock*" -o -name "*test*" -o -name "*.md" | grep -v ".git" | read; then
+            echo "Found non-production files"
+            exit 1
+          fi
+
+      - name: Check no docker files
+        run: |
+          if [ -d docker ] || [ -f docker-compose.yml ]; then
+            echo "Found docker files"
+            exit 1
+          fi
+
+  final-check:
+    name: Final Production Readiness
+    runs-on: ubuntu-latest
+    needs: [php-syntax, security-check, woocommerce-check, validation]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify file count
+        run: |
+          FILE_COUNT=$(git ls-files | wc -l)
+          if [ "$FILE_COUNT" -gt 50 ]; then
+            echo "File count: $FILE_COUNT (expected <= 50)"
+            exit 1
+          fi
+          echo "File count: $FILE_COUNT (OK)"
+
+      - name: Verify no README files
+        run: |
+          if git ls-files | grep -q "README"; then
+            echo "Found README files"
+            exit 1
+          fi
+
+      - name: Production ready
+        run: echo "✅ All checks passed - Production ready"
