@@ -544,7 +544,9 @@ function bamero_mobile_auth_shortcode() {
     <script nonce="<?php echo esc_attr(function_exists('bamero_csp_nonce') ? bamero_csp_nonce() : ''); ?>">
     (function(){
         var root = document.getElementById('bamero-mobile-auth');
-        if (!root) return;
+        if (!root) {
+            return;
+        }
         root.querySelectorAll('.bamero-tab').forEach(function(tab){
             tab.addEventListener('click', function(){
                 root.querySelectorAll('.bamero-tab').forEach(function(t){ t.classList.remove('active'); });

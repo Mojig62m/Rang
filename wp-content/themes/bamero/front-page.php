@@ -10,7 +10,9 @@ $consultation = get_page_by_path('consultation');
 $consultation_url = $consultation ? get_permalink($consultation) : home_url('/contact/');
 $products = function_exists('wc_get_products') ? wc_get_products(array('status'=>'publish','limit'=>10,'orderby'=>'date','order'=>'DESC','return'=>'objects')) : array();
 $categories = function_exists('get_terms') ? get_terms(array('taxonomy'=>'product_cat','hide_empty'=>true,'number'=>6,'orderby'=>'count','order'=>'DESC')) : array();
-if (is_wp_error($categories)) $categories = array();
+if (is_wp_error($categories)) {
+    $categories = array();
+}
 ?>
 <main id="main-content" class="bamero-home" tabindex="-1">
     <section class="bamero-hero container" aria-labelledby="bamero-hero-title">
@@ -34,7 +36,9 @@ if (is_wp_error($categories)) $categories = array();
     <section class="bamero-category-strip container" aria-labelledby="category-title">
         <div class="bamero-section-heading"><div><p class="bamero-eyebrow">شروع سریع</p><h2 id="category-title">از دسته‌بندی درست شروع کنید</h2></div><a href="<?php echo esc_url($shop_url); ?>">همهٔ محصولات <span aria-hidden="true">←</span></a></div>
         <div class="bamero-category-grid">
-            <?php if ($categories) : foreach ($categories as $category) : $term_link = get_term_link($category); if (is_wp_error($term_link)) continue; ?>
+            <?php if ($categories) : foreach ($categories as $category) : $term_link = get_term_link($category); if (is_wp_error($term_link)) {
+                continue;
+            } ?>
                 <a class="bamero-category-card" href="<?php echo esc_url($term_link); ?>"><span class="bamero-category-icon" aria-hidden="true"><?php echo esc_html(mb_substr($category->name, 0, 1)); ?></span><span><strong><?php echo esc_html($category->name); ?></strong><small><bdi><?php echo esc_html(number_format_i18n($category->count)); ?></bdi> محصول</small></span><span class="bamero-arrow" aria-hidden="true">←</span></a>
             <?php endforeach; else : ?><a class="bamero-category-card" href="<?php echo esc_url($shop_url); ?>"><span class="bamero-category-icon">ب</span><span><strong>کاتالوگ محصولات</strong><small>مشاهدهٔ محصولات موجود</small></span><span class="bamero-arrow" aria-hidden="true">←</span></a><?php endif; ?>
         </div>

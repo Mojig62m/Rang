@@ -195,7 +195,9 @@ add_filter('woocommerce_product_tabs', 'bamero_custom_product_tabs');
 
 function bamero_product_meta_value($key, $default = 'ثبت نشده') {
     global $product;
-    if (!$product instanceof WC_Product) return $default;
+    if (!$product instanceof WC_Product) {
+        return $default;
+    }
     $value = get_post_meta($product->get_id(), $key, true);
     return $value !== '' ? $value : $default;
 }
@@ -215,12 +217,16 @@ function bamero_product_application_tab_content() {
 function bamero_product_safety_tab_content() {
     $url = bamero_product_meta_value('_bamero_msds_url', '');
     echo '<div class="bamero-safety-guide"><p>پیش از مصرف، برچسب محصول و دستورالعمل ایمنی را مطالعه کنید. دور از دسترس کودکان و منابع حرارتی نگهداری شود.</p>';
-    if ($url !== '') echo '<p><a class="button" href="' . esc_url($url) . '" target="_blank" rel="noopener">دریافت برگهٔ MSDS</a></p>';
+    if ($url !== '') {
+        echo '<p><a class="button" href="' . esc_url($url) . '" target="_blank" rel="noopener">دریافت برگهٔ MSDS</a></p>';
+    }
     echo '</div>';
 }
 
 function bamero_coverage_calculator() {
-    if (!is_product()) return;
+    if (!is_product()) {
+        return;
+    }
     $coverage = (float) bamero_product_meta_value('_bamero_coverage', '0');
     echo '<section class="bamero-coverage-calculator" aria-labelledby="bamero-coverage-title"><h3 id="bamero-coverage-title">ماشین‌حساب مقدار مورد نیاز</h3><p>مساحت سطح را وارد کنید؛ ضریب اطمینان ۱۰٪ در محاسبه لحاظ می‌شود.</p><label for="bamero-area">مساحت (متر مربع)</label><input id="bamero-area" type="number" min="0" step="0.1" inputmode="decimal"><output id="bamero-coverage-result" data-coverage="' . esc_attr((string) $coverage) . '" aria-live="polite">پوشش‌دهی محصول ثبت نشده است.</output></section>';
 }

@@ -15,7 +15,9 @@ const BAMERO_CART_SELECTOR = '.bamero-mini-cart';
 
 function bamero_request_id() {
     static $request_id = null;
-    if (null !== $request_id) return $request_id;
+    if (null !== $request_id) {
+        return $request_id;
+    }
     $incoming = isset($_SERVER['HTTP_X_REQUEST_ID']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_REQUEST_ID'])) : '';
     $request_id = preg_match('/^[A-Za-z0-9._:-]{8,64}$/', $incoming) ? $incoming : wp_generate_uuid4();
     return $request_id;
@@ -75,7 +77,9 @@ add_filter('authenticate', 'bamero_rate_limit_login', 30, 2);
 if ( ! function_exists( 'bamero_csp_nonce' ) ) {
 function bamero_csp_nonce() {
     static $nonce = null;
-    if (null === $nonce) $nonce = base64_encode(random_bytes(16));
+    if (null === $nonce) {
+        $nonce = base64_encode(random_bytes(16));
+    }
     return $nonce;
 }
 }
@@ -109,7 +113,9 @@ add_action('init', 'bamero_disable_unused_features', 1);
 // Canonical owner of bamero_security_headers() (guarded; theme keeps a fallback).
 if ( ! function_exists( 'bamero_security_headers' ) ) {
 function bamero_security_headers() {
-    if (headers_sent()) return;
+    if (headers_sent()) {
+        return;
+    }
     header('X-Request-ID: ' . bamero_request_id());
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
@@ -140,7 +146,9 @@ add_action('woocommerce_checkout_create_order', 'bamero_checkout_idempotency', 1
 function bamero_private_cache_headers() {
     $account = function_exists('is_account_page') && is_account_page();
     $private = (function_exists('is_cart') && (is_cart() || is_checkout() || $account)) || is_user_logged_in();
-    if (!$private) return;
+    if (!$private) {
+        return;
+    }
     if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
     nocache_headers();
 }
@@ -263,7 +271,9 @@ add_action('before_delete_post', 'bamero_invalidate_product_cache');
 
 function bamero_observe_order($order_id) {
     $order = wc_get_order($order_id);
-    if (!$order) return;
+    if (!$order) {
+        return;
+    }
     bamero_log_event('order_status_changed', array('order_id' => $order_id, 'status' => $order->get_status(), 'currency' => $order->get_currency()));
 }
 add_action('woocommerce_order_status_changed', 'bamero_observe_order');
@@ -353,7 +363,9 @@ function bamero_seal_notification_payload(array $payload) {
     $tag = '';
     $key = hash('sha256', AUTH_KEY, true);
     $cipher = openssl_encrypt(wp_json_encode($payload), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
-    if (false === $cipher || '' === $tag) return new WP_Error('payload_crypto_failed', 'Notification payload encryption failed.');
+    if (false === $cipher || '' === $tag) {
+        return new WP_Error('payload_crypto_failed', 'Notification payload encryption failed.');
+    }
     return base64_encode($iv . $tag . $cipher);
 }
 
@@ -459,7 +471,9 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
     $now = current_time('mysql', true);
     $correlation = function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('bamero_', true);
     $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$table} WHERE idempotency_key = %s LIMIT 1", $idem));
-    if ($exists) return (int) $exists;
+    if ($exists) {
+        return (int) $exists;
+    }
     $sealed = bamero_seal_notification_payload($payload);
     if (is_wp_error($sealed)) return $sealed;
     $expires = false !== stripos($template_key, 'otp') ? gmdate('Y-m-d H:i:s', time() + 600) : gmdate('Y-m-d H:i:s', time() + DAY_IN_SECONDS);
@@ -481,9 +495,13 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
 
 function bamero_sms_provider_send($mobile, $template_key, array $payload, $idempotency_key) {
     $result = apply_filters('bamero_sms_provider_send', null, $mobile, $template_key, $payload, $idempotency_key);
-    if (null === $result) return new WP_Error('sms_provider_not_configured', 'SMS provider is not configured.');
+    if (null === $result) {
+        return new WP_Error('sms_provider_not_configured', 'SMS provider is not configured.');
+    }
     if (is_wp_error($result)) return $result;
-    if (true === $result) return array('provider_message_id' => 'provider_ack');
+    if (true === $result) {
+        return array('provider_message_id' => 'provider_ack');
+    }
     return is_array($result) ? $result : new WP_Error('sms_provider_failed', 'SMS provider rejected the request.');
 }
 
@@ -498,7 +516,9 @@ function bamero_sms_ir_provider_send($result, $mobile, $template_key, array $pay
     $api_key = (string) getenv('SMS_IR_API_KEY');
     $template_env = 'SMS_IR_TEMPLATE_' . strtoupper(preg_replace('/[^A-Za-z0-9]+/', '_', $template_key));
     $template_id = (string) getenv($template_env);
-    if (!$api_key || !$template_id) return new WP_Error('sms_provider_not_configured', 'SMS.ir API key or template is missing.');
+    if (!$api_key || !$template_id) {
+        return new WP_Error('sms_provider_not_configured', 'SMS.ir API key or template is missing.');
+    }
     $base = rtrim((string) (getenv('SMS_IR_API_BASE_URL') ?: 'https://api.sms.ir/v1'), '/');
     $parameters = array();
     if (isset($payload['otp'])) $parameters[] = array('name' => (string) (getenv('SMS_IR_OTP_PARAMETER') ?: 'Code'), 'value' => (string) $payload['otp']);
@@ -526,7 +546,9 @@ function bamero_process_notification_outbox($limit = 20) {
     $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$table} WHERE status = 'pending' AND scheduled_at <= %s AND (locked_at IS NULL OR locked_at < UTC_TIMESTAMP() - INTERVAL 5 MINUTE) ORDER BY id ASC LIMIT %d", $now, max(1, (int) $limit)));
     foreach ($rows as $row) {
         $locked = $wpdb->query($wpdb->prepare("UPDATE {$table} SET locked_at = UTC_TIMESTAMP(), updated_at = UTC_TIMESTAMP() WHERE id = %d AND status = 'pending' AND (locked_at IS NULL OR locked_at < UTC_TIMESTAMP() - INTERVAL 5 MINUTE)", $row->id));
-        if (1 !== $locked) continue;
+        if (1 !== $locked) {
+            continue;
+        }
         if (!empty($row->payload_expires_at) && strtotime($row->payload_expires_at . ' UTC') < time()) {
             $wpdb->update($table, array('status' => 'failed', 'last_error_code' => 'payload_expired', 'locked_at' => null, 'updated_at' => $now), array('id' => $row->id));
             continue;
@@ -574,7 +596,9 @@ add_action('init', 'bamero_schedule_notification_worker', 20);
 function bamero_queue_order_sms($order_id, $old_status, $new_status, $order) {
     if (!$order || !function_exists('wc_get_order')) return;
     $mobile = $order->get_billing_phone();
-    if (!$mobile) return;
+    if (!$mobile) {
+        return;
+    }
     $map = array('processing' => 'order_processing', 'completed' => 'order_delivered', 'cancelled' => 'order_cancelled', 'failed' => 'payment_failed', 'refunded' => 'refund_completed');
     if (!isset($map[$new_status])) return;
     bamero_queue_notification($order_id, (int) $order->get_user_id(), $map[$new_status], array('mobile' => $mobile, 'order_id' => (int) $order_id));
