@@ -160,7 +160,9 @@ function bamero_private_cache_headers() {
     if (!$private) {
         return;
     }
-    if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE', true);
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
     nocache_headers();
 }
 add_action('template_redirect', 'bamero_private_cache_headers', 1);
@@ -285,7 +287,9 @@ function bamero_cart_fragment($fragments) {
 add_filter('woocommerce_add_to_cart_fragments', 'bamero_cart_fragment');
 
 function bamero_invalidate_product_cache($post_id) {
-    if (get_post_type($post_id) === 'product') delete_transient('bamero_home_products');
+    if (get_post_type($post_id) === 'product') {
+        delete_transient('bamero_home_products');
+    }
 }
 add_action('save_post_product', 'bamero_invalidate_product_cache');
 add_action('before_delete_post', 'bamero_invalidate_product_cache');
@@ -485,11 +489,12 @@ add_action('activated_plugin', 'bamero_install_notification_outbox');
  * on admin requests and before every worker run.
  */
 function bamero_ensure_notification_outbox() {
-    if (get_option('bamero_notification_outbox_installed') !== 'yes'
-        || (string) get_option('bamero_notification_outbox_db_version') !== BAMERO_OUTBOX_DB_VERSION) {
+    $installed = get_option('bamero_notification_outbox_installed');
+    $version = (string) get_option('bamero_notification_outbox_db_version');
+    if ($installed !== 'yes' || $version !== BAMERO_OUTBOX_DB_VERSION) {
         bamero_install_notification_outbox();
     }
-}
+}}
 add_action('admin_init', 'bamero_ensure_notification_outbox');
 
 function bamero_queue_notification($order_id, $user_id, $template_key, array $payload, $max_retries = 5) {
@@ -562,8 +567,12 @@ function bamero_sms_ir_provider_send($result, $mobile, $template_key, array $pay
     }
     $base = rtrim((string) (getenv('SMS_IR_API_BASE_URL') ?: 'https://api.sms.ir/v1'), '/');
     $parameters = array();
-    if (isset($payload['otp'])) $parameters[] = array('name' => (string) (getenv('SMS_IR_OTP_PARAMETER') ?: 'Code'), 'value' => (string) $payload['otp']);
-    if (isset($payload['order_id'])) $parameters[] = array('name' => (string) (getenv('SMS_IR_ORDER_PARAMETER') ?: 'OrderId'), 'value' => (string) $payload['order_id']);
+    if (isset($payload['otp'])) {
+        $parameters[] = array('name' => (string) (getenv('SMS_IR_OTP_PARAMETER') ?: 'Code'), 'value' => (string) $payload['otp']);
+    }
+    if (isset($payload['order_id'])) {
+        $parameters[] = array('name' => (string) (getenv('SMS_IR_ORDER_PARAMETER') ?: 'OrderId'), 'value' => (string) $payload['order_id']);
+    }
     $response = wp_remote_post($base . '/send/verify', array(
         'timeout' => max(3, (int) (getenv('SMS_TIMEOUT') ?: 5)),
         'headers' => array('X-API-KEY' => $api_key, 'Accept' => 'application/json', 'Content-Type' => 'application/json'),
