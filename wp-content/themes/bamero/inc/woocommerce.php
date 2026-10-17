@@ -14,6 +14,9 @@ defined('ABSPATH') || exit;
 // ===== WOOCOMMERCE CUSTOMIZATIONS =====
 
 // Change WooCommerce texts to Persian
+/**
+ * Translate WooCommerce strings to Persian.
+ */
 function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
     if ($domain === 'woocommerce') {
         // Static cache: build the map once per request instead of on every gettext call.
@@ -137,6 +140,9 @@ function bamero_save_custom_product_fields($post_id) {
 add_action('woocommerce_process_product_meta', 'bamero_save_custom_product_fields');
 
 // Display custom product fields
+/**
+ * Display custom product fields on the frontend.
+ */
 function bamero_display_custom_product_fields() {
     global $product;
 

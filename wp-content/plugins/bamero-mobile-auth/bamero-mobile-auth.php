@@ -48,6 +48,9 @@ function bamero_normalize_ir_mobile($raw) {
     return false;
 }
 
+/**
+ * Validate authentication schema for phone and OTP.
+ */
 function bamero_auth_schema_validate($phone_raw, $otp_raw = null, $context = 'login') {
     $phone = bamero_normalize_ir_mobile($phone_raw);
     if (!$phone || !in_array($context, array('login', 'register'), true)) {

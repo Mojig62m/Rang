@@ -14,6 +14,9 @@ defined('ABSPATH') || exit;
 // ===== CUSTOM SHORTCODES =====
 
 // Color consultation shortcode.
+/**
+ * Render color consultation form shortcode.
+ */
 function bamero_color_consultation_shortcode() {
     $status = isset($_GET['consultation_status']) ? sanitize_key(wp_unslash($_GET['consultation_status'])) : '';
     $messages = array(

@@ -22,6 +22,9 @@ add_action('before_woocommerce_init', function () {
 });
 
 add_action('plugins_loaded', 'bamero_zarinpal_bootstrap', 20);
+/**
+ * Bootstrap Zarinpal payment gateway plugin.
+ */
 function bamero_zarinpal_bootstrap() {
     if (!class_exists('WC_Payment_Gateway')) {
         return;

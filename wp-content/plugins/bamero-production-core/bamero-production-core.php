@@ -95,6 +95,9 @@ function bamero_rate_limit_account_page() {
 }
 add_action('template_redirect', 'bamero_rate_limit_account_page', 2);
 
+/**
+ * Disable unused WordPress features for security hardening.
+ */
 function bamero_disable_unused_features() {
     remove_action('wp_head',
  'rsd_link');
@@ -201,9 +204,9 @@ function bamero_health_rest_routes() {
         'callback' => function () {
             // R5: readiness details are internal environment state. Fail-closed:
             // without a configured BAMERO_HEALTH_TOKEN the endpoint stays closed;
-            // with one, callers must present it (?token=...).
+            // with one, callers must present it via X-Bamero-Health-Token header.
             $token = (string) getenv('BAMERO_HEALTH_TOKEN');
-            $given = isset($_GET['token']) ? (string) sanitize_text_field(wp_unslash($_GET['token'])) : '';
+            $given = isset($_SERVER['HTTP_X_BAMERO_HEALTH_TOKEN']) ? (string) sanitize_text_field(wp_unslash($_SERVER['HTTP_X_BAMERO_HEALTH_TOKEN'])) : '';
             if ('' === $token || !hash_equals($token, $given)) {
                 return new WP_REST_Response(array('status' => 'forbidden'), 403);
             }
