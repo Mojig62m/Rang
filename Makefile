@@ -13,7 +13,7 @@
 #   make docker-down    - Stop Docker containers
 # =============================================================================
 
-.PHONY: help install setup test certify launch-gate db-backup db-restore reset docker-up docker-down
+.PHONY: help install setup test certify launch-gate preflight db-backup db-restore reset docker-up docker-down
 
 # =============================================================================
 # Help
@@ -118,6 +118,13 @@ test:
 	wp cron test
 	@echo ""
 	@echo "✅ All tests passed"
+
+# =============================================================================
+# Agent Preflight (contract §4, Phase 1) — fail-closed
+# =============================================================================
+preflight:
+	@echo "🔹 Running agent preflight (contract §4)..."
+	bash scripts/agent_preflight.sh
 
 # =============================================================================
 # Database Backup
