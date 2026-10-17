@@ -236,4 +236,4 @@ docs(ci): قرارداد اجرایی برای Copilot Coding Agent
 اگر مشکلی در commit داشتید:
 - مطمئن شوید مجوزهای GitHub صحیح است (SSH key یا token)
 - مطمئن شوید `main` branch تا آخرین commit update شده است
-- مطمئن شوید فایل `.github/copilot-agent-contract.md` دقیقاً ۲۶۰۰+ خط دارد
+مطمئن شوید فایل `.github/copilot-agent-contract.md` موجود و با نسخهٔ ریشهٔ مخزن یکسان است (از ۲۰۲۶-۱۰-۱۷ هر دو موجودند)
