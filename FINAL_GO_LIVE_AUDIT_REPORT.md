@@ -689,10 +689,10 @@ Add artifact tracking:
 ## 📚 Evidence and References
 
 ### Workflow Files (After Fixes)
-- [`deploy.yml`](.github/workflows/deploy.yml) - Safe deployment
-- [`ci.yml`](.github/workflows/ci.yml) - Proper CI checks
-- [`security-audit.yml`](.github/workflows/security-audit.yml) - Enhanced security
-- [`health-check.yml`](.github/workflows/health-check.yml) - Production monitoring
+- `.github/workflows/deploy.yml` - Safe deployment
+- `.github/workflows/ci.yml` - Proper CI checks
+- `.github/workflows/security-audit.yml` - Enhanced security
+- `.github/workflows/health-check.yml` - Production monitoring
 
 ### Documentation
 - [`DEPLOYMENT_ARCHITECTURE.md`](DEPLOYMENT_ARCHITECTURE.md) - Architecture summary

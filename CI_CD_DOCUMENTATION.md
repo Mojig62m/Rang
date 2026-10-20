@@ -884,7 +884,7 @@ gh secret set SECRET_NAME -b "secret_value"
 
 - [Deployment Architecture](DEPLOYMENT_ARCHITECTURE.md)
 - [Go-Live Report](GO_LIVE_REPORT.md)
-- [Workflow Files](.github/workflows/)
+- Workflow files: `.github/workflows/`
 
 ---
 

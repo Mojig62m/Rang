@@ -1073,7 +1073,7 @@ ssh user@server "df -h"
 - [CI/CD Documentation](CI_CD_DOCUMENTATION.md)
 - [Deployment Architecture](DEPLOYMENT_ARCHITECTURE.md)
 - [Go-Live Report](GO_LIVE_REPORT.md)
-- [Workflow Files](.github/workflows/)
+- Workflow files: `.github/workflows/`
 
 ---
 
