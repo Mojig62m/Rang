@@ -40,7 +40,15 @@ const BAMERO_NON_DIGIT_PATTERN = '/\D+/';
  */
 function bamero_normalize_ir_mobile($raw)
 {
-    $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $raw);
+    // Persian (U+06F0..) and Arabic-Indic (U+0660..) digits are what Iranian
+    // visitors actually type; fold them to ASCII before stripping non-digits.
+    $raw = strtr((string) $raw, array(
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ));
+    $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', $raw);
     if ($digits === '') {
         return false;
     }
@@ -496,7 +504,6 @@ function bamero_mobile_auth_shortcode()
         'logged_in'           => __('با موفقیت وارد شدید.', 'bamero-mobile-auth'),
         'otp_expired'         => __('کد منقضی شد. کد جدید درخواست کنید.', 'bamero-mobile-auth'),
         'otp_mismatch'        => __('کد اشتباه است.', 'bamero-mobile-auth'),
-        'invalid_mobile'      => __('شماره موبایل نامعتبر است.', 'bamero-mobile-auth'),
         'auth_schema_invalid' => __('اطلاعات واردشده نامعتبر است. شماره و کد را بررسی کنید.', 'bamero-mobile-auth'),
         'rate_limited'        => __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'),
         'locked'              => __('به دلیل تلاش‌های ناموفق، ورود موقتاً قفل شده است. ۱۵ دقیقه بعد دوباره تلاش کنید.', 'bamero-mobile-auth'),

@@ -179,7 +179,7 @@ function bamero_preload_primary_font()
         // and is therefore not preloaded (avoids a wasted high-priority request).
         $font_path = BAMERO_THEME_PATH . '/assets/fonts/Estedad-wght.woff2';
         if (is_readable($font_path)) {
-            printf('<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>\n', esc_url(BAMERO_THEME_DIR . '/assets/fonts/Estedad-wght.woff2'));
+            printf('<link rel="preload" href="%s" as="font" type="font/woff2" crossorigin>' . "\n", esc_url(BAMERO_THEME_DIR . '/assets/fonts/Estedad-wght.woff2'));
         }
     }
 }
