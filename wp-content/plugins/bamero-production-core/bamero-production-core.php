@@ -494,7 +494,7 @@ function bamero_ensure_notification_outbox() {
     if ($installed !== 'yes' || $version !== BAMERO_OUTBOX_DB_VERSION) {
         bamero_install_notification_outbox();
     }
-}}
+}
 add_action('admin_init', 'bamero_ensure_notification_outbox');
 
 function bamero_queue_notification($order_id, $user_id, $template_key, array $payload, $max_retries = 5) {
