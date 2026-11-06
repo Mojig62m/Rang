@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — Performance
  *
@@ -14,7 +15,8 @@ defined('ABSPATH') || exit;
 // ===== PERFORMANCE IMPROVEMENTS =====
 
 // Defer JavaScript loading
-function bamero_defer_scripts($tag, $handle, $src) {
+function bamero_defer_scripts($tag, $handle, $src)
+{
     // JS-01/02: defer only theme main script — never core library handles
     // Only add the attribute to the external tag: rebuilding the whole $tag
     // dropped the id attribute and the wp_add_inline_script() "before" block
@@ -27,7 +29,8 @@ function bamero_defer_scripts($tag, $handle, $src) {
 add_filter('script_loader_tag', 'bamero_defer_scripts', 10, 3);
 
 // Disable heartbeats in admin
-function bamero_disable_heartbeat() {
+function bamero_disable_heartbeat()
+{
     if (is_admin()) {
         return;
     }
@@ -40,7 +43,8 @@ add_action('init', 'bamero_disable_heartbeat', 1);
 // =============================================================================
 
 /** Remove emoji, embed, and other bloat */
-function bamero_disable_bloat() {
+function bamero_disable_bloat()
+{
     remove_action('wp_head', 'wp_oembed_add_discovery_links');
     remove_action('wp_head', 'rest_output_link_wp_head');
     // Emoji bloat — single canonical owner (deduplicated from the former bamero_disable_emojis).
@@ -58,7 +62,8 @@ function bamero_disable_bloat() {
 add_action('init', 'bamero_disable_bloat', 1);
 
 /** Fetchpriority on LCP candidate (logo / product image) */
-function bamero_fetchpriority_logo($attr, $attachment, $size) {
+function bamero_fetchpriority_logo($attr, $attachment, $size)
+{
     if (is_admin()) {
         return $attr;
     }
@@ -85,7 +90,8 @@ add_filter('wp_iframe_tag_add_loading_attr', function () {
  * everything else is capped at 5. Consolidates the two previous
  * wp_revisions_to_keep callbacks into a single owner.
  */
-function bamero_limit_post_revisions($num, $post) {
+function bamero_limit_post_revisions($num, $post)
+{
     if (isset($post->post_type) && $post->post_type === 'product') {
         return 3;
     }

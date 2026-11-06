@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Bamero Mobile Auth
  * Description: Customer identity by verified mobile + SMS OTP. No customer password. No customer email authentication.
@@ -13,6 +14,15 @@
 
 defined('ABSPATH') || exit;
 
+/**
+ * Declare High-Performance Order Storage (HPOS) compatibility.
+ */
+add_action('before_woocommerce_init', function () {
+    if (class_exists('Automattic\\WooCommerce\\Utilities\\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
+
 define('BAMERO_MOBILE_AUTH_VERSION', '1.0.0');
 define('BAMERO_MOBILE_AUTH_OTP_TTL', 120);      // OTP validity window: 2 minutes
 define('BAMERO_MOBILE_AUTH_OTP_LENGTH', 6);
@@ -20,9 +30,9 @@ define('BAMERO_MOBILE_AUTH_RATE_LIMIT', 5);     // max OTP requests per phone pe
 define('BAMERO_MOBILE_AUTH_MAX_ATTEMPTS', 3);   // max verification attempts per OTP
 define('BAMERO_MOBILE_AUTH_LOCKOUT', 900);      // 15-minute lockout after repeated failed verifications
 define('BAMERO_MOBILE_AUTH_META_PHONE', 'bamero_verified_mobile');
-const BAMERO_NON_DIGIT_PATTERN = BAMERO_NON_DIGIT_PATTERN;
-const BAMERO_MOBILE_LABEL = '\u0634\u0645\u0627\u0631\u0647 \u0645\u0648\u0628\u0627\u06cc\u0644';
-const BAMERO_RATE_LIMITED_MSG = '\u062a\u0639\u062f\u0627\u062f \u062f\u0631\u062e\u0648\u0627\u0633\u062a\u200c\u0647\u0627 \u0628\u06cc\u0634 \u0627\u0632 \u062d\u062f \u0645\u062c\u0627\u0632 \u0627\u0633\u062a. \u0628\u0639\u062f\u0627\u064b \u062a\u0644\u0627\u0634 \u06a9\u0646\u06cc\u062f.';
+const BAMERO_NON_DIGIT_PATTERN = '/\D+/';
+const BAMERO_MOBILE_LABEL = 'شماره موبایل';
+const BAMERO_RATE_LIMITED_MSG = 'تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.';
 
 /**
  * Normalize Iranian mobile to 989xxxxxxxxx (digits only, country code 98).
@@ -30,7 +40,8 @@ const BAMERO_RATE_LIMITED_MSG = '\u062a\u0639\u062f\u0627\u062f \u062f\u0631\u06
  * @param string $raw Raw input.
  * @return string|false Normalized phone or false.
  */
-function bamero_normalize_ir_mobile($raw) {
+function bamero_normalize_ir_mobile($raw)
+{
     $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $raw);
     if ($digits === '') {
         return false;
@@ -54,7 +65,8 @@ function bamero_normalize_ir_mobile($raw) {
 /**
  * Validate authentication schema for phone and OTP.
  */
-function bamero_auth_schema_validate($phone_raw, $otp_raw = null, $context = 'login') {
+function bamero_auth_schema_validate($phone_raw, $otp_raw = null, $context = 'login')
+{
     $phone = bamero_normalize_ir_mobile($phone_raw);
     if (!$phone || !in_array($context, array('login', 'register'), true)) {
         return new WP_Error('auth_schema_invalid', __('ساختار درخواست احراز هویت نامعتبر است.', 'bamero-mobile-auth'));
@@ -71,7 +83,8 @@ function bamero_auth_schema_validate($phone_raw, $otp_raw = null, $context = 'lo
 /**
  * Format for display: 09xx xxx xxxx
  */
-function bamero_format_mobile_display($normalized) {
+function bamero_format_mobile_display($normalized)
+{
     if (!$normalized || strlen($normalized) < 12) {
         return $normalized;
     }
@@ -82,7 +95,8 @@ function bamero_format_mobile_display($normalized) {
 /**
  * Generate cryptographically strong OTP.
  */
-function bamero_generate_otp() {
+function bamero_generate_otp()
+{
     $max = (10 ** BAMERO_MOBILE_AUTH_OTP_LENGTH) - 1;
     $num = random_int(0, $max);
     return str_pad((string) $num, BAMERO_MOBILE_AUTH_OTP_LENGTH, '0', STR_PAD_LEFT);
@@ -91,14 +105,16 @@ function bamero_generate_otp() {
 /**
  * Transient key for OTP challenge.
  */
-function bamero_otp_transient_key($phone) {
+function bamero_otp_transient_key($phone)
+{
     return 'bamero_otp_' . md5($phone);
 }
 
 /**
  * Request OTP for registration or login.
  */
-function bamero_request_otp($phone_raw, $context = 'login') {
+function bamero_request_otp($phone_raw, $context = 'login')
+{
     $schema = bamero_auth_schema_validate($phone_raw, null, $context);
     if (is_wp_error($schema)) {
         return $schema;
@@ -177,7 +193,8 @@ function bamero_request_otp($phone_raw, $context = 'login') {
 /**
  * Verify OTP and return normalized phone on success.
  */
-function bamero_verify_otp($phone_raw, $otp_raw) {
+function bamero_verify_otp($phone_raw, $otp_raw)
+{
     $schema = bamero_auth_schema_validate($phone_raw, $otp_raw, 'login');
     if (is_wp_error($schema)) {
         return $schema;
@@ -233,7 +250,8 @@ function bamero_verify_otp($phone_raw, $otp_raw) {
 /**
  * Find WP user by verified mobile meta or login = phone.
  */
-function bamero_get_user_by_mobile($normalized_phone) {
+function bamero_get_user_by_mobile($normalized_phone)
+{
     $users = get_users(array(
         'meta_key'   => BAMERO_MOBILE_AUTH_META_PHONE,
         'meta_value' => $normalized_phone,
@@ -253,7 +271,8 @@ function bamero_get_user_by_mobile($normalized_phone) {
  * WordPress requires user_email technically — use phone-based synthetic internal address
  * that is never used for auth or customer communication (platform constraint).
  */
-function bamero_register_customer($normalized_phone, $first_name, $last_name) {
+function bamero_register_customer($normalized_phone, $first_name, $last_name)
+{
     if (!preg_match('/^989\d{9}$/', (string) $normalized_phone)) {
         return new WP_Error('schema_invalid', __('شماره موبایل ثبت‌نام معتبر نیست.', 'bamero-mobile-auth'));
     }
@@ -270,7 +289,9 @@ function bamero_register_customer($normalized_phone, $first_name, $last_name) {
     // Internal-only mailbox placeholder — not for customer messaging or auth recovery.
     // Required by WP user schema; never used as identity.
     $salt = (string) getenv('BAMERO_INTERNAL_ID_SALT');
-    if ($salt === '') { $salt = wp_salt('auth'); }
+    if ($salt === '') {
+        $salt = wp_salt('auth');
+    }
     $internal_email = hash('sha256', $normalized_phone . $salt) . '@bamero.internal';
 
     $user_id = wp_insert_user(array(
@@ -300,7 +321,8 @@ function bamero_register_customer($normalized_phone, $first_name, $last_name) {
 /**
  * Log user in via WordPress auth cookies (existing platform session architecture).
  */
-function bamero_login_user($user_id) {
+function bamero_login_user($user_id)
+{
     wp_set_current_user($user_id);
     wp_set_auth_cookie($user_id, true, is_ssl());
     do_action('wp_login', get_userdata($user_id)->user_login, get_userdata($user_id));
@@ -311,7 +333,8 @@ function bamero_login_user($user_id) {
 /**
  * Handle OTP request form submission.
  */
-function bamero_handle_request_otp() {
+function bamero_handle_request_otp()
+{
     if (!isset($_POST['bamero_otp_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_otp_nonce'])), 'bamero_request_otp')) {
         wp_die(esc_html__('درخواست نامعتبر.', 'bamero-mobile-auth'), '', array('response' => 403));
     }
@@ -338,7 +361,8 @@ function bamero_handle_request_otp() {
 add_action('admin_post_nopriv_bamero_request_otp', 'bamero_handle_request_otp');
 add_action('admin_post_bamero_request_otp', 'bamero_handle_request_otp');
 
-function bamero_handle_verify_otp() {
+function bamero_handle_verify_otp()
+{
     if (!isset($_POST['bamero_otp_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_otp_nonce'])), 'bamero_verify_otp')) {
         wp_die(esc_html__('درخواست نامعتبر.', 'bamero-mobile-auth'), '', array('response' => 403));
     }
@@ -424,7 +448,8 @@ add_action('admin_post_bamero_verify_otp', 'bamero_handle_verify_otp');
 /**
  * WooCommerce: make email optional / not required for checkout account flows.
  */
-function bamero_wc_checkout_fields($fields) {
+function bamero_wc_checkout_fields($fields)
+{
     if (isset($fields['billing']['billing_email'])) {
         $fields['billing']['billing_email']['required'] = false;
         $fields['billing']['billing_email']['label']    = __('ایمیل (اختیاری)', 'bamero-mobile-auth');
@@ -445,7 +470,8 @@ add_filter('woocommerce_enable_myaccount_registration', '__return_false');
 /**
  * Shortcode: [bamero_mobile_auth] — login/register OTP UI
  */
-function bamero_mobile_auth_shortcode() {
+function bamero_mobile_auth_shortcode()
+{
     if (is_user_logged_in()) {
         $u = wp_get_current_user();
         $phone = get_user_meta($u->ID, BAMERO_MOBILE_AUTH_META_PHONE, true);
@@ -581,7 +607,8 @@ add_shortcode('bamero_mobile_auth', 'bamero_mobile_auth_shortcode');
  * Create My Account reliance: if WC my-account page empty of form, owners can add shortcode.
  * On activation, ensure a page exists with the shortcode for login.
  */
-function bamero_mobile_auth_activate() {
+function bamero_mobile_auth_activate()
+{
     $page = get_page_by_path('mobile-login');
     if (!$page) {
         wp_insert_post(array(
@@ -597,7 +624,8 @@ register_activation_hook(__FILE__, 'bamero_mobile_auth_activate');
 
 
 /** AUTH-04: disable all WooCommerce customer-facing emails */
-function bamero_disable_customer_emails($enabled, $order = null) {
+function bamero_disable_customer_emails($enabled, $order = null)
+{
     return false;
 }
 $bamero_email_ids = array(
@@ -618,7 +646,8 @@ foreach ($bamero_email_ids as $hook) {
  * Phone-only policy: there is no customer password, so every password-reset /
  * lost-password surface must be disabled. Customers authenticate only via OTP.
  */
-function bamero_disable_password_reset() {
+function bamero_disable_password_reset()
+{
     // Core: block the retrieve/reset flow for OTP-only CUSTOMERS. Admins and
     // shop managers must keep a working password-recovery path.
     add_filter('allow_password_reset', function ($allow, $user_id) {

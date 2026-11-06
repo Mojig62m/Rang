@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — SEO / structured data
  *
@@ -14,11 +15,11 @@
 defined('ABSPATH') || exit;
 
 // Schema constants
-const BAMERO_ORG_NAME = '\u0628\u0627\u0645\u0631\u0648';
-const BAMERO_SCHEMA_GRAPH = BAMERO_SCHEMA_GRAPH;
-const BAMERO_SCHEMA_TYPE = BAMERO_SCHEMA_TYPE;
-const BAMERO_SCHEMA_ORG = BAMERO_SCHEMA_ORG;
-const BAMERO_ORG_LOCATION = '\u0627\u0635\u0641\u0647\u0627\u0646';
+const BAMERO_ORG_NAME = 'بامرو';
+const BAMERO_SCHEMA_GRAPH = '@graph';
+const BAMERO_SCHEMA_TYPE = '@type';
+const BAMERO_SCHEMA_ORG = '#organization';
+const BAMERO_ORG_LOCATION = 'اصفهان';
 
 // =============================================================================
 // HELPERS
@@ -29,7 +30,8 @@ const BAMERO_ORG_LOCATION = '\u0627\u0635\u0641\u0647\u0627\u0646';
  * Rank Math, Yoast, AIOSEO and SEOPress all print their own tags; the theme
  * then stays silent so nothing is duplicated.
  */
-function bamero_seo_plugin_active() {
+function bamero_seo_plugin_active()
+{
     return defined('RANK_MATH_VERSION')
         || defined('WPSEO_VERSION')
         || defined('AIOSEO_VERSION')
@@ -37,7 +39,8 @@ function bamero_seo_plugin_active() {
 }
 
 /** Sanitize a latitude/longitude Customizer value (decimal degrees). */
-function bamero_sanitize_coordinate($value, $setting = null) {
+function bamero_sanitize_coordinate($value, $setting = null)
+{
     $value = trim(bamero_ascii_digits((string) $value));
     if ($value === '' || !is_numeric($value)) {
         return '';
@@ -51,7 +54,8 @@ function bamero_sanitize_coordinate($value, $setting = null) {
 }
 
 /** Owner-configurable GEO settings (Appearance > Customize > Bamero contact). */
-function bamero_seo_customize_register($wp_customize) {
+function bamero_seo_customize_register($wp_customize)
+{
     $fields = array(
         'bamero_geo_latitude'  => array('label' => __('عرض جغرافیایی فروشگاه (Latitude)', 'bamero'), 'default' => '32.666756', 'sanitize' => 'bamero_sanitize_coordinate', 'type' => 'text'),
         'bamero_geo_longitude' => array('label' => __('طول جغرافیایی فروشگاه (Longitude)', 'bamero'), 'default' => '51.644733', 'sanitize' => 'bamero_sanitize_coordinate', 'type' => 'text'),
@@ -73,7 +77,8 @@ function bamero_seo_customize_register($wp_customize) {
 add_action('customize_register', 'bamero_seo_customize_register', 20);
 
 /** Canonical URL of the current view ('' when the view has none). */
-function bamero_seo_current_url() {
+function bamero_seo_current_url()
+{
     if (is_404() || is_search()) {
         return '';
     }
@@ -106,7 +111,8 @@ function bamero_seo_current_url() {
 }
 
 /** Plain-text, whitespace-normalised, length-capped description. */
-function bamero_seo_clean_text($text, $max = 160) {
+function bamero_seo_clean_text($text, $max = 160)
+{
     $text = wp_strip_all_tags(strip_shortcodes((string) $text), true);
     $text = trim(preg_replace('/\s+/u', ' ', $text));
     if ($text !== '' && function_exists('mb_strlen') && mb_strlen($text) > $max) {
@@ -116,7 +122,8 @@ function bamero_seo_clean_text($text, $max = 160) {
 }
 
 /** Meta description for the current view. */
-function bamero_seo_description() {
+function bamero_seo_description()
+{
     $fallback = get_bloginfo('description');
     if (!$fallback) {
         $fallback = 'فروشگاه اینترنتی بامرو؛ خرید رنگ ساختمانی و صنعتی، پوشش‌های ضدآب و انواع چسب با مشاورهٔ فنی در اصفهان.';
@@ -147,7 +154,8 @@ function bamero_seo_description() {
 }
 
 /** Absolute URL + alt of the share image (product/featured image, then logo). */
-function bamero_seo_image() {
+function bamero_seo_image()
+{
     $image_id = 0;
     if (function_exists('is_product') && is_product()) {
         $product = wc_get_product(get_queried_object_id());
@@ -179,7 +187,8 @@ function bamero_seo_image() {
  * @param WP_Term|null $term Leaf term.
  * @return WP_Term[]
  */
-function bamero_seo_term_trail($term) {
+function bamero_seo_term_trail($term)
+{
     if (!$term instanceof WP_Term) {
         return array();
     }
@@ -195,7 +204,8 @@ function bamero_seo_term_trail($term) {
 }
 
 /** Deepest product_cat of a product (same ordering WooCommerce breadcrumbs use). */
-function bamero_seo_product_main_term($product_id) {
+function bamero_seo_product_main_term($product_id)
+{
     if (!function_exists('wc_get_product_terms')) {
         return null;
     }
@@ -212,7 +222,8 @@ function bamero_seo_product_main_term($product_id) {
  * WordPress core already prints rel=canonical on singular views, so the theme
  * only adds it for archives (shop, product categories, paginated lists).
  */
-function bamero_output_meta_tags() {
+function bamero_output_meta_tags()
+{
     if (is_admin() || bamero_seo_plugin_active()) {
         return;
     }
@@ -274,7 +285,8 @@ function bamero_output_meta_tags() {
 add_action('wp_head', 'bamero_output_meta_tags', 2);
 
 /** hreflang self-reference (single-language fa-IR site). */
-function bamero_output_hreflang() {
+function bamero_output_hreflang()
+{
     if (is_admin()) {
         return;
     }
@@ -293,7 +305,8 @@ add_action('wp_head', 'bamero_output_hreflang', 3);
  * entities in the footer. When an SEO plugin owns schema, WooCommerce's
  * markup is left untouched for it to manage.
  */
-function bamero_disable_wc_duplicate_schema($markup) {
+function bamero_disable_wc_duplicate_schema($markup)
+{
     return bamero_seo_plugin_active() ? $markup : array();
 }
 add_filter('woocommerce_structured_data_product', 'bamero_disable_wc_duplicate_schema', 99);
@@ -308,7 +321,8 @@ add_filter('woocommerce_structured_data_website', 'bamero_disable_wc_duplicate_s
  * Organization + LocalBusiness + WebSite entity graph (single @graph).
  * Optimized for Google AI Overviews / entity resolution (H2 2025–2026).
  */
-function bamero_output_entity_graph() {
+function bamero_output_entity_graph()
+{
     if (is_admin()) {
         return;
     }
@@ -563,7 +577,7 @@ function bamero_output_entity_graph() {
         }
     }
 
-    echo '<script type="application/ld+json" nonce="' . esc_attr( function_exists( 'bamero_csp_nonce' ) ? bamero_csp_nonce() : '' ) . '">' . wp_json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) . '</script>' . "\n";
+    echo '<script type="application/ld+json" nonce="' . esc_attr(function_exists('bamero_csp_nonce') ? bamero_csp_nonce() : '') . '">' . wp_json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) . '</script>' . "\n";
 }
 add_action('wp_head', 'bamero_output_entity_graph', 5);
 
@@ -572,7 +586,8 @@ add_action('wp_head', 'bamero_output_entity_graph', 5);
  * keeps core's max-image-preview:large). Shop, product and category pages
  * are never noindexed.
  */
-function bamero_meta_robots($robots) {
+function bamero_meta_robots($robots)
+{
     if (is_search() || is_404()) {
         $robots['noindex'] = true;
         $robots['follow']  = true;
@@ -590,7 +605,8 @@ add_filter('wp_robots', 'bamero_meta_robots');
  * domain the owner configures under Settings > General. A static file would
  * hard-code a host that does not exist yet.
  */
-function bamero_robots_txt($output, $public) {
+function bamero_robots_txt($output, $public)
+{
     if (!$public) {
         return $output;
     }

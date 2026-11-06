@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme Functions — bootstrap.
  *

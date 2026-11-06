@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — WooCommerce integration
  *
@@ -17,12 +18,13 @@ defined('ABSPATH') || exit;
 /**
  * Translate WooCommerce strings to Persian.
  */
-function bamero_woocommerce_persian_text($translated_text, $text, $domain) {
+function bamero_woocommerce_persian_text($translated_text, $text, $domain)
+{
     if ($domain === 'woocommerce') {
         // Static cache: build the map once per request instead of on every gettext call.
         static $translations = null;
         if ($translations === null) {
-        $translations = array(
+            $translations = array(
             'Add to cart' => 'افزودن به سبد خرید',
             'Shop' => 'فروشگاه',
             'Cart' => 'سبد خرید',
@@ -86,7 +88,8 @@ add_filter('gettext', 'bamero_woocommerce_persian_text', 20, 3);
 /**
  * Add custom product fields to admin product editor.
  */
-function bamero_add_custom_product_fields() {
+function bamero_add_custom_product_fields()
+{
     woocommerce_wp_text_input(array(
         'id' => '_product_color_code',
         'label' => 'کد رنگ',
@@ -111,7 +114,8 @@ function bamero_add_custom_product_fields() {
         'description' => 'اطلاعات تکمیلی دربارهٔ محصول.',
     ));
 
-    foreach (array(
+    foreach (
+        array(
         '_bamero_ral_code' => array('label' => 'کد RAL/NCS', 'placeholder' => 'مثال: RAL 9016'),
         '_bamero_resin_base' => array('label' => 'پایه رزین', 'placeholder' => 'مثال: اکریلیک آب‌پایه'),
         '_bamero_drying_time' => array('label' => 'زمان خشک شدن', 'placeholder' => 'مثال: ۲ ساعت'),
@@ -120,7 +124,8 @@ function bamero_add_custom_product_fields() {
         '_bamero_density' => array('label' => 'دانسیته', 'placeholder' => 'مثال: ۱.۲ kg/L'),
         '_bamero_surface' => array('label' => 'سطح مناسب', 'placeholder' => 'مثال: دیوار، بتن'),
         '_bamero_msds_url' => array('label' => 'لینک MSDS', 'placeholder' => 'https://'),
-    ) as $field_id => $field) {
+        ) as $field_id => $field
+    ) {
         woocommerce_wp_text_input(array('id' => $field_id, 'label' => $field['label'], 'placeholder' => $field['placeholder'], 'desc_tip' => true));
     }
 }
@@ -130,7 +135,8 @@ add_action('woocommerce_product_options_general_product_data', 'bamero_add_custo
 /**
  * Save custom product fields from admin product editor.
  */
-function bamero_save_custom_product_fields($post_id) {
+function bamero_save_custom_product_fields($post_id)
+{
     $product_color_code = isset($_POST['_product_color_code']) ? sanitize_hex_color(wp_unslash($_POST['_product_color_code'])) : '';
     $product_brand = isset($_POST['_product_brand']) ? sanitize_text_field(wp_unslash($_POST['_product_brand'])) : '';
     $product_additional_info = isset($_POST['_product_additional_info']) ? sanitize_textarea_field(wp_unslash($_POST['_product_additional_info'])) : '';
@@ -149,7 +155,8 @@ add_action('woocommerce_process_product_meta', 'bamero_save_custom_product_field
 /**
  * Display custom product fields on the frontend.
  */
-function bamero_display_custom_product_fields() {
+function bamero_display_custom_product_fields()
+{
     global $product;
 
     $color_code = get_post_meta($product->get_id(), '_product_color_code', true);
@@ -171,7 +178,8 @@ function bamero_display_custom_product_fields() {
 add_action('woocommerce_product_meta_end', 'bamero_display_custom_product_fields', 10);
 
 // Get contrast color for text
-function bamero_get_contrast_color($hex_color) {
+function bamero_get_contrast_color($hex_color)
+{
     if (!is_string($hex_color) || !preg_match('/^#[0-9A-Fa-f]{6}$/', $hex_color)) {
         return '#000000';
     }
@@ -183,7 +191,8 @@ function bamero_get_contrast_color($hex_color) {
 }
 
 // Custom product tabs
-function bamero_custom_product_tabs($tabs) {
+function bamero_custom_product_tabs($tabs)
+{
     global $product;
     if (!$product instanceof WC_Product) {
         return $tabs;
@@ -205,7 +214,8 @@ function bamero_custom_product_tabs($tabs) {
 }
 add_filter('woocommerce_product_tabs', 'bamero_custom_product_tabs');
 
-function bamero_product_meta_value($key, $default = 'ثبت نشده') {
+function bamero_product_meta_value($key, $default = 'ثبت نشده')
+{
     global $product;
     if (!$product instanceof WC_Product) {
         return $default;
@@ -214,7 +224,8 @@ function bamero_product_meta_value($key, $default = 'ثبت نشده') {
     return $value !== '' ? $value : $default;
 }
 
-function bamero_product_specs_tab_content() {
+function bamero_product_specs_tab_content()
+{
     echo '<div class="bamero-technical-specs"><table><caption class="screen-reader-text">مشخصات فنی محصول</caption><tbody>';
     foreach (array('پایه رزین' => '_bamero_resin_base', 'زمان خشک شدن' => '_bamero_drying_time', 'پوشش‌دهی m²/L' => '_bamero_coverage', 'VOC' => '_bamero_voc', 'دانسیته' => '_bamero_density', 'سطح مناسب' => '_bamero_surface', 'کد RAL/NCS' => '_bamero_ral_code') as $label => $key) {
         echo '<tr><th scope="row">' . esc_html($label) . '</th><td class="technical-value">' . esc_html(bamero_product_meta_value($key)) . '</td></tr>';
@@ -222,11 +233,13 @@ function bamero_product_specs_tab_content() {
     echo '</tbody></table></div>';
 }
 
-function bamero_product_application_tab_content() {
+function bamero_product_application_tab_content()
+{
     echo '<div class="bamero-application-guide"><p><strong>آماده‌سازی:</strong> سطح باید تمیز، خشک و عاری از چربی و گردوغبار باشد.</p><p><strong>ابزار:</strong> قلم‌مو، غلتک یا پیستوله متناسب با نوع محصول.</p><p><strong>شرایط اجرا:</strong> دمای محیط و سطح باید مطابق برگهٔ مشخصات فنی (دیتاشیت) محصول باشد.</p></div>';
 }
 
-function bamero_product_safety_tab_content() {
+function bamero_product_safety_tab_content()
+{
     $url = bamero_product_meta_value('_bamero_msds_url', '');
     echo '<div class="bamero-safety-guide"><p>پیش از مصرف، برچسب محصول و دستورالعمل ایمنی را مطالعه کنید. دور از دسترس کودکان و منابع حرارتی نگهداری شود.</p>';
     if ($url !== '') {
@@ -235,7 +248,8 @@ function bamero_product_safety_tab_content() {
     echo '</div>';
 }
 
-function bamero_coverage_calculator() {
+function bamero_coverage_calculator()
+{
     if (!is_product()) {
         return;
     }
@@ -245,7 +259,8 @@ function bamero_coverage_calculator() {
 add_action('woocommerce_after_add_to_cart_form', 'bamero_coverage_calculator', 20);
 
 // Additional info tab content
-function bamero_additional_info_tab_content() {
+function bamero_additional_info_tab_content()
+{
     global $product;
     $additional_info = get_post_meta($product->get_id(), '_product_additional_info', true);
     echo '<div class="additional-info-content">' . wp_kses_post(nl2br($additional_info)) . '</div>';
@@ -258,7 +273,8 @@ add_filter('woocommerce_enqueue_styles', '__return_empty_array');
 
 // WooCommerce breadcrumb args — canonical filter (the previous wrapper was never
 // registered, so WooCommerce rendered the default English breadcrumb).
-function bamero_woocommerce_breadcrumb_defaults($defaults) {
+function bamero_woocommerce_breadcrumb_defaults($defaults)
+{
     $defaults['delimiter'] = ' <i class="fas fa-chevron-left" aria-hidden="true"></i> ';
     $defaults['wrap_before'] = '<nav class="woocommerce-breadcrumb" aria-label="' . esc_attr__('مسیر صفحه', 'bamero') . '">';
     $defaults['wrap_after'] = '</nav>';
@@ -268,7 +284,8 @@ function bamero_woocommerce_breadcrumb_defaults($defaults) {
 add_filter('woocommerce_breadcrumb_defaults', 'bamero_woocommerce_breadcrumb_defaults');
 
 // Custom cart fragment
-function bamero_woocommerce_header_add_to_cart_fragment($fragments) {
+function bamero_woocommerce_header_add_to_cart_fragment($fragments)
+{
     $count = (function_exists('WC') && WC()->cart) ? (int) WC()->cart->get_cart_contents_count() : 0;
     // Selector must match header.php: span.cart-count (GATE-03)
     $fragments['span.cart-count'] = '<span class="cart-count">' . esc_html(bamero_persian_digits((string) $count)) . '</span>';
@@ -277,7 +294,8 @@ function bamero_woocommerce_header_add_to_cart_fragment($fragments) {
 add_filter('woocommerce_add_to_cart_fragments', 'bamero_woocommerce_header_add_to_cart_fragment');
 
 // Custom product search form
-function bamero_product_search_form($form) {
+function bamero_product_search_form($form)
+{
     $form = '<form role="search" method="get" class="woocommerce-product-search" action="' . esc_url(home_url('/')) . '">';
     $field_id = 'woocommerce-product-search-field-' . uniqid();
     $form .= '<label class="screen-reader-text" for="' . esc_attr($field_id) . '">' . _x('Search for:', 'label', 'woocommerce') . '</label>';
@@ -288,4 +306,3 @@ function bamero_product_search_form($form) {
     return $form;
 }
 add_filter('get_product_search_form', 'bamero_product_search_form');
-

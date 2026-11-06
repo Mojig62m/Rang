@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero production wp-config — fail-closed secrets.
  *
@@ -23,7 +24,8 @@ if (!defined('ABSPATH')) {
  * Minimal .env loader so the site boots on shared PHP hosting that cannot set
  * real environment variables. Existing env vars always take precedence.
  */
-function bamero_load_env_file(): void {
+function bamero_load_env_file(): void
+{
     $candidates = array();
 
     if (defined('BAMERO_ENV_FILE')) {
@@ -58,7 +60,6 @@ function bamero_load_env_file(): void {
             $value = trim($value);
 
             if ($key === '') {
-
                 continue;
             }
 
@@ -90,7 +91,8 @@ bamero_load_env_file();
 /**
  * Require non-empty env; reject known placeholders. Uses die() before WP loads.
  */
-function bamero_require_env(string $key): string {
+function bamero_require_env(string $key): string
+{
     $value = getenv($key);
     if ($value === false || $value === '') {
         // Fallbacks for hosts where putenv()/getenv() is restricted.
@@ -101,7 +103,8 @@ function bamero_require_env(string $key): string {
         header('Content-Type: text/plain; charset=UTF-8');
         die('Configuration error: missing required environment variable: ' . $key);
     }
-    if (stripos($value, '' . 'put-your-' . 'unique-phrase') !== false
+    if (
+        stripos($value, '' . 'put-your-' . 'unique-phrase') !== false
         || stripos($value, 'putyour') !== false
         || in_array(strtolower($value), array('changeme', 'secret', 'password', 'null', 'root', ''), true)
     ) {
@@ -119,14 +122,14 @@ define('DB_HOST', bamero_require_env('DB_HOST'));
 define('DB_CHARSET', 'utf8mb4');
 define('DB_COLLATE', '');
 
-define('AUTH_KEY',         bamero_require_env('AUTH_KEY'));
-define('SECURE_AUTH_KEY',  bamero_require_env('SECURE_AUTH_KEY'));
-define('LOGGED_IN_KEY',    bamero_require_env('LOGGED_IN_KEY'));
-define('NONCE_KEY',        bamero_require_env('NONCE_KEY'));
-define('AUTH_SALT',        bamero_require_env('AUTH_SALT'));
+define('AUTH_KEY', bamero_require_env('AUTH_KEY'));
+define('SECURE_AUTH_KEY', bamero_require_env('SECURE_AUTH_KEY'));
+define('LOGGED_IN_KEY', bamero_require_env('LOGGED_IN_KEY'));
+define('NONCE_KEY', bamero_require_env('NONCE_KEY'));
+define('AUTH_SALT', bamero_require_env('AUTH_SALT'));
 define('SECURE_AUTH_SALT', bamero_require_env('SECURE_AUTH_SALT'));
-define('LOGGED_IN_SALT',   bamero_require_env('LOGGED_IN_SALT'));
-define('NONCE_SALT',       bamero_require_env('NONCE_SALT'));
+define('LOGGED_IN_SALT', bamero_require_env('LOGGED_IN_SALT'));
+define('NONCE_SALT', bamero_require_env('NONCE_SALT'));
 
 $table_prefix = (getenv('TABLE_PREFIX') !== false && getenv('TABLE_PREFIX') !== '')
     ? getenv('TABLE_PREFIX')

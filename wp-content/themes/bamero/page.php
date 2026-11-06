@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Default Page Template for Bamero Theme
  *

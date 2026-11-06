@@ -1,15 +1,17 @@
 <?php
+
 /**
  * Bamero storefront homepage — production data only.
  * The page renders published WooCommerce records; no hard-coded product cards.
  */
+
 defined('ABSPATH') || exit;
 get_header();
 $shop_url = function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/shop/');
 $consultation = get_page_by_path('consultation');
 $consultation_url = $consultation ? get_permalink($consultation) : home_url('/contact/');
-$products = function_exists('wc_get_products') ? wc_get_products(array('status'=>'publish','limit'=>10,'orderby'=>'date','order'=>'DESC','return'=>'objects')) : array();
-$categories = function_exists('get_terms') ? get_terms(array('taxonomy'=>'product_cat','hide_empty'=>true,'number'=>6,'orderby'=>'count','order'=>'DESC')) : array();
+$products = function_exists('wc_get_products') ? wc_get_products(array('status' => 'publish','limit' => 10,'orderby' => 'date','order' => 'DESC','return' => 'objects')) : array();
+$categories = function_exists('get_terms') ? get_terms(array('taxonomy' => 'product_cat','hide_empty' => true,'number' => 6,'orderby' => 'count','order' => 'DESC')) : array();
 if (is_wp_error($categories)) {
     $categories = array();
 }
@@ -36,26 +38,51 @@ if (is_wp_error($categories)) {
     <section class="bamero-category-strip container" aria-labelledby="category-title">
         <div class="bamero-section-heading"><div><p class="bamero-eyebrow">شروع سریع</p><h2 id="category-title">از دسته‌بندی درست شروع کنید</h2></div><a href="<?php echo esc_url($shop_url); ?>">همهٔ محصولات <span aria-hidden="true">←</span></a></div>
         <div class="bamero-category-grid">
-            <?php if ($categories) : foreach ($categories as $category) : $term_link = get_term_link($category); if (is_wp_error($term_link)) {
-                continue;
-            } ?>
+            <?php if ($categories) :
+                foreach ($categories as $category) :
+                    $term_link = get_term_link($category); if (is_wp_error($term_link)) {
+                        continue;
+                    } ?>
                 <a class="bamero-category-card" href="<?php echo esc_url($term_link); ?>"><span class="bamero-category-icon" aria-hidden="true"><?php echo esc_html(mb_substr($category->name, 0, 1)); ?></span><span><strong><?php echo esc_html($category->name); ?></strong><small><bdi><?php echo esc_html(number_format_i18n($category->count)); ?></bdi> محصول</small></span><span class="bamero-arrow" aria-hidden="true">←</span></a>
-            <?php endforeach; else : ?><a class="bamero-category-card" href="<?php echo esc_url($shop_url); ?>"><span class="bamero-category-icon">ب</span><span><strong>کاتالوگ محصولات</strong><small>مشاهدهٔ محصولات موجود</small></span><span class="bamero-arrow" aria-hidden="true">←</span></a><?php endif; ?>
+                <?php endforeach;
+            else :
+                ?><a class="bamero-category-card" href="<?php echo esc_url($shop_url); ?>"><span class="bamero-category-icon">ب</span><span><strong>کاتالوگ محصولات</strong><small>مشاهدهٔ محصولات موجود</small></span><span class="bamero-arrow" aria-hidden="true">←</span></a><?php
+            endif; ?>
         </div>
     </section>
 
     <section class="bamero-catalog container" aria-labelledby="catalog-title">
         <div class="bamero-section-heading"><div><p class="bamero-eyebrow">کاتالوگ بامرو</p><h2 id="catalog-title">محصولات منتخب برای پروژه‌های واقعی</h2></div><a href="<?php echo esc_url($shop_url); ?>">مشاهدهٔ همه <span aria-hidden="true">←</span></a></div>
         <div class="bamero-product-grid">
-            <?php $bamero_lp_index = 0; if ($products) : foreach ($products as $product) : $GLOBALS['product'] = $product; $product_id = $product->get_id(); $image = $product->get_image_id() ? wp_get_attachment_image_url($product->get_image_id(), 'woocommerce_thumbnail') : ''; $brand = get_post_meta($product_id, '_product_brand', true); ?>
+            <?php $bamero_lp_index = 0;
+            if ($products) :
+                foreach ($products as $product) :
+                    $GLOBALS['product'] = $product;
+                    $product_id = $product->get_id();
+                    $image = $product->get_image_id() ? wp_get_attachment_image_url($product->get_image_id(), 'woocommerce_thumbnail') : '';
+                    $brand = get_post_meta($product_id, '_product_brand', true); ?>
                 <article class="bamero-product-card">
                     <a class="bamero-product-media" href="<?php echo esc_url(get_permalink($product_id)); ?>" aria-label="مشاهدهٔ <?php echo esc_attr($product->get_name()); ?>">
-                        <?php if ($product->is_on_sale()) : ?><span class="bamero-sale-badge">تخفیف ویژه</span><?php endif; ?>
-                        <?php if ($image) : ?><img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($product->get_name()); ?>" <?php echo 0 === $bamero_lp_index ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'; ?> width="420" height="315"><?php else : ?><div class="bamero-product-art" aria-hidden="true"><span>BAMERO</span></div><?php endif; ?>
+                                <?php if ($product->is_on_sale()) :
+                                    ?><span class="bamero-sale-badge">تخفیف ویژه</span><?php
+                                endif; ?>
+                            <?php if ($image) :
+                                ?><img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($product->get_name()); ?>" <?php echo 0 === $bamero_lp_index ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"'; ?> width="420" height="315"><?php
+                            else :
+                                ?><div class="bamero-product-art" aria-hidden="true"><span>BAMERO</span></div><?php
+                            endif; ?>
                     </a>
-                    <div class="bamero-product-body"><div class="bamero-product-meta"><span><?php echo esc_html($brand ?: 'انتخاب بامرو'); ?></span></div><?php if (!$product->is_in_stock()) : ?><span class="bamero-stock-flag is-out">ناموجود</span><?php elseif ($product->managing_stock() && (int) $product->get_stock_quantity() > 0 && (int) $product->get_stock_quantity() <= 5) : ?><span class="bamero-stock-flag is-low">موجودی محدود</span><?php endif; ?><h3><a href="<?php echo esc_url(get_permalink($product_id)); ?>"><?php echo esc_html($product->get_name()); ?></a></h3><div class="bamero-product-bottom"><span class="bamero-price"><?php echo wp_kses_post(bamero_format_price_html($product)); ?></span><?php woocommerce_template_loop_add_to_cart(array('product'=>$product)); ?></div></div>
+                    <div class="bamero-product-body"><div class="bamero-product-meta"><span><?php echo esc_html($brand ?: 'انتخاب بامرو'); ?></span></div><?php if (!$product->is_in_stock()) :
+                        ?><span class="bamero-stock-flag is-out">ناموجود</span><?php
+                                                                                            elseif ($product->managing_stock() && (int) $product->get_stock_quantity() > 0 && (int) $product->get_stock_quantity() <= 5) :
+                                                                                                ?><span class="bamero-stock-flag is-low">موجودی محدود</span><?php
+                                                                                            endif; ?><h3><a href="<?php echo esc_url(get_permalink($product_id)); ?>"><?php echo esc_html($product->get_name()); ?></a></h3><div class="bamero-product-bottom"><span class="bamero-price"><?php echo wp_kses_post(bamero_format_price_html($product)); ?></span><?php woocommerce_template_loop_add_to_cart(array('product' => $product)); ?></div></div>
                 </article>
-            <?php $bamero_lp_index++; endforeach; else : ?><div class="bamero-empty-state"><h3>کاتالوگ در حال آماده‌سازی است</h3><p>به‌زودی محصولات این بخش نمایش داده می‌شوند.</p><a class="button" href="<?php echo esc_url($consultation_url); ?>">تماس با پشتیبانی</a></div><?php endif; ?>
+                    <?php $bamero_lp_index++;
+                endforeach;
+            else :
+                ?><div class="bamero-empty-state"><h3>کاتالوگ در حال آماده‌سازی است</h3><p>به‌زودی محصولات این بخش نمایش داده می‌شوند.</p><a class="button" href="<?php echo esc_url($consultation_url); ?>">تماس با پشتیبانی</a></div><?php
+            endif; ?>
         </div>
     </section>
 

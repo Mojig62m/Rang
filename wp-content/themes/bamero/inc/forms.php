@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — Forms and Customizer
  *
@@ -17,7 +18,8 @@ defined('ABSPATH') || exit;
 /**
  * Render color consultation form shortcode.
  */
-function bamero_color_consultation_shortcode() {
+function bamero_color_consultation_shortcode()
+{
     $status = isset($_GET['consultation_status']) ? sanitize_key(wp_unslash($_GET['consultation_status'])) : '';
     $messages = array(
         'success' => array('class' => 'woocommerce-message', 'text' => 'درخواست مشاورهٔ شما با موفقیت ارسال شد.'),
@@ -62,7 +64,8 @@ add_shortcode('bamero_color_consultation', 'bamero_color_consultation_shortcode'
 /**
  * Process color consultation form submission.
  */
-function bamero_process_color_consultation() {
+function bamero_process_color_consultation()
+{
     if (!isset($_POST['bamero_color_consultation_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_color_consultation_nonce'])), 'bamero_color_consultation')) {
         wp_die(esc_html__('درخواست نامعتبر است. لطفاً دوباره تلاش کنید.', 'bamero'), '', array('response' => 403));
     }
@@ -99,7 +102,8 @@ add_action('admin_post_nopriv_bamero_color_consultation', 'bamero_process_color_
 /**
  * Process contact form submission.
  */
-function bamero_process_contact_submit() {
+function bamero_process_contact_submit()
+{
     if (!isset($_POST['bamero_contact_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['bamero_contact_nonce'])), 'bamero_contact')) {
         wp_die(esc_html__('درخواست نامعتبر است.', 'bamero'), '', array('response' => 403));
     }
@@ -131,7 +135,8 @@ add_action('admin_post_bamero_contact_submit', 'bamero_process_contact_submit');
 add_action('admin_post_nopriv_bamero_contact_submit', 'bamero_process_contact_submit');
 
 /** Register owner-configurable storefront settings (Appearance > Customize). */
-function bamero_customize_register($wp_customize) {
+function bamero_customize_register($wp_customize)
+{
     $wp_customize->add_section('bamero_contact', array(
         'title'       => __('اطلاعات تماس بامرو', 'bamero'),
         'description' => __('این مقادیر در سربرگ، پاورقی و داده‌های ساختاریافته (Schema) استفاده می‌شوند.', 'bamero'),

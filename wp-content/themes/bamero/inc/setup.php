@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — Setup
  *
@@ -14,7 +15,8 @@ defined('ABSPATH') || exit;
 /**
  * Theme setup and configuration.
  */
-function bamero_setup() {
+function bamero_setup()
+{
     // Text domain for translations
     load_theme_textdomain('bamero', BAMERO_THEME_PATH . '/languages');
 
@@ -92,7 +94,8 @@ add_action('after_setup_theme', 'bamero_setup');
  * there as well. Every other page skips that CSS payload. The Modern Commerce
  * 2026 refresh was merged into storefront-modern.css (single file, one enqueue).
  */
-function bamero_scripts() {
+function bamero_scripts()
+{
     // Design tokens first
     wp_enqueue_style(
         'bamero-variables',
@@ -167,7 +170,8 @@ function bamero_scripts() {
 }
 add_action('wp_enqueue_scripts', 'bamero_scripts');
 
-function bamero_preload_primary_font() {
+function bamero_preload_primary_font()
+{
     if (is_front_page() || (function_exists('is_product') && is_product())) {
         // Estedad is the primary brand face; Vazirmatn stays only as a CSS fallback
         // and is therefore not preloaded (avoids a wasted high-priority request).
@@ -180,7 +184,8 @@ function bamero_preload_primary_font() {
 add_action('wp_head', 'bamero_preload_primary_font', 1);
 
 /** JS-05: cart script only on commerce surfaces */
-function bamero_maybe_enqueue_add_to_cart() {
+function bamero_maybe_enqueue_add_to_cart()
+{
     if (!function_exists('is_woocommerce')) {
         return;
     }
@@ -195,7 +200,8 @@ add_action('wp_enqueue_scripts', 'bamero_maybe_enqueue_add_to_cart', 20);
 
 
 // Add body classes
-function bamero_body_classes($classes) {
+function bamero_body_classes($classes)
+{
     $classes[] = 'rtl';
     if (function_exists('is_woocommerce') && is_woocommerce()) {
         $classes[] = 'woocommerce-page';
@@ -207,11 +213,11 @@ add_filter('body_class', 'bamero_body_classes');
 // ===== ACCESSIBILITY IMPROVEMENTS =====
 
 // Add skip to content link
-function bamero_skip_to_content_link() {
+function bamero_skip_to_content_link()
+{
     echo '<a href="#main-content" class="skip-to-content screen-reader-text">' . esc_html__('پرش به محتوا', 'bamero') . '</a>';
 }
 add_action('wp_body_open', 'bamero_skip_to_content_link');
 
 // Navigation accessibility is handled via aria-label on <nav> in header.php
 // Do not mutate menu item titles (breaks screen readers and SEO).
-

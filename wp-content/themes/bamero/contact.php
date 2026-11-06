@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Template Name: Contact
  *
@@ -49,7 +50,7 @@ $address = bamero_address_display();
                 'rate_limited' => array('class' => 'woocommerce-error', 'text' => __('تعداد درخواست‌ها بیش از حد مجاز است. لطفاً کمی بعد دوباره تلاش کنید.', 'bamero')),
             );
             if (isset($bamero_contact_messages[$bamero_contact_status])) :
-            ?>
+                ?>
             <div class="<?php echo esc_attr($bamero_contact_messages[$bamero_contact_status]['class']); ?>" role="status">
                 <?php echo esc_html($bamero_contact_messages[$bamero_contact_status]['text']); ?>
             </div>
