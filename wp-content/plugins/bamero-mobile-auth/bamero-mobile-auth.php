@@ -489,7 +489,7 @@ function bamero_mobile_auth_shortcode()
     // Every code that bamero_request_otp() / bamero_handle_verify_otp() can
     // put in ?bamero_auth= has a human-readable message; unknown codes fall
     // back to a generic error so the visitor is never left without feedback.
-    $success_codes = array('otp_sent', 'registered', 'logged_in');
+    $is_success = in_array($status, array('otp_sent', 'registered', 'logged_in'), true);
     $messages = array(
         'otp_sent'            => __('کد تأیید ارسال شد.', 'bamero-mobile-auth'),
         'registered'          => __('ثبت‌نام با موفقیت انجام شد. خوش آمدید.', 'bamero-mobile-auth'),
@@ -513,7 +513,7 @@ function bamero_mobile_auth_shortcode()
     ?>
     <div class="bamero-mobile-auth" id="bamero-mobile-auth">
         <?php if ($status !== '') : ?>
-            <div class="<?php echo in_array($status, $success_codes, true) ? 'woocommerce-message' : 'woocommerce-error'; ?>" role="<?php echo in_array($status, $success_codes, true) ? 'status' : 'alert'; ?>">
+            <div class="<?php echo $is_success ? 'woocommerce-message' : 'woocommerce-error'; ?>" role="<?php echo $is_success ? 'status' : 'alert'; ?>">
                 <?php echo esc_html(isset($messages[$status]) ? $messages[$status] : $generic_error); ?>
             </div>
         <?php endif; ?>

@@ -127,6 +127,8 @@ function bamero_process_contact_submit()
     wp_safe_redirect(add_query_arg('contact_status', $delivered ? 'success' : 'error', $redirect));
     exit;
 }
+add_action('admin_post_bamero_contact_submit', 'bamero_process_contact_submit');
+add_action('admin_post_nopriv_bamero_contact_submit', 'bamero_process_contact_submit');
 
 /**
  * Deliver a storefront form submission to the store OWNER.
@@ -154,7 +156,7 @@ function bamero_notify_owner($template_key, $name, $phone, $message)
     $label = isset($labels[$template_key]) ? $labels[$template_key] : $template_key;
     $delivered = false;
 
-    $owner_mobile = function_exists('bamero_owner_mobile') ? bamero_owner_mobile() : '';
+    $owner_mobile = bamero_owner_mobile();
     if ($owner_mobile !== '' && function_exists('bamero_queue_notification')) {
         $queued = bamero_queue_notification(0, get_current_user_id(), $template_key, array(
             'mobile'          => $owner_mobile,
@@ -186,8 +188,6 @@ function bamero_notify_owner($template_key, $name, $phone, $message)
     }
     return $delivered;
 }
-add_action('admin_post_bamero_contact_submit', 'bamero_process_contact_submit');
-add_action('admin_post_nopriv_bamero_contact_submit', 'bamero_process_contact_submit');
 
 /** Register owner-configurable storefront settings (Appearance > Customize). */
 function bamero_customize_register($wp_customize)

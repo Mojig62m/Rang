@@ -29,7 +29,7 @@ class Bamero_Zarinpal_Blocks_Support extends \Automattic\WooCommerce\Blocks\Paym
         $handle = 'bamero-zarinpal-blocks';
         wp_register_script(
             $handle,
-            plugins_url('blocks/zarinpal-checkout-block.js', __FILE__),
+            plugins_url('zarinpal-checkout-block.js', __FILE__),
             array('wc-blocks-registry', 'wc-settings', 'wp-element', 'wp-i18n', 'wp-html-entities'),
             BAMERO_ZARINPAL_VERSION,
             true
@@ -37,20 +37,21 @@ class Bamero_Zarinpal_Blocks_Support extends \Automattic\WooCommerce\Blocks\Paym
         return array($handle);
     }
 
+    /** Only called for active methods (see PaymentMethodRegistry), so the gateway exists here. */
     public function get_payment_method_data()
     {
         $gateway = $this->gateway();
         return array(
-            'title'       => $gateway ? $gateway->get_title() : 'پرداخت امن زرین‌پال',
-            'description' => $gateway ? $gateway->get_description() : '',
-            'supports'    => $gateway ? array_filter($gateway->supports, array($gateway, 'supports')) : array('products'),
+            'title'       => $gateway->get_title(),
+            'description' => $gateway->get_description(),
+            'supports'    => array_filter($gateway->supports, array($gateway, 'supports')),
         );
     }
 
     /** @return WC_Payment_Gateway|null */
     private function gateway()
     {
-        $gateways = WC()->payment_gateways() ? WC()->payment_gateways()->payment_gateways() : array();
+        $gateways = WC()->payment_gateways()->payment_gateways();
         return isset($gateways[$this->name]) ? $gateways[$this->name] : null;
     }
 }

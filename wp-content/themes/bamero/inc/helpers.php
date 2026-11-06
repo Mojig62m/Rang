@@ -98,10 +98,6 @@ function bamero_whatsapp_default()
  */
 function bamero_owner_mobile()
 {
-    $digits = preg_replace('/\D+/', '', bamero_ascii_digits(bamero_phone_display()));
-    if (function_exists('bamero_normalize_ir_mobile')) {
-        $normalized = bamero_normalize_ir_mobile($digits);
-        return $normalized ? $normalized : '';
-    }
-    return preg_match('/^(0?9\d{9}|989\d{9})$/', $digits) ? $digits : '';
+    $e164 = bamero_phone_e164(); // +98913… for 0913…, 913… and 98913… inputs
+    return preg_match('/^\+989\d{9}$/', $e164) ? substr($e164, 1) : '';
 }
