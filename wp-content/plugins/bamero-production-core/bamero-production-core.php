@@ -430,8 +430,13 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
         return $schema;
     }
     $clean = array('mobile' => isset($payload['mobile']) ? (string) $payload['mobile'] : '', 'order_id' => (int) $order_id, 'template_key' => sanitize_key($template_key));
-    if (isset($payload['otp'])) {
-        $clean['otp'] = (string) $payload['otp'];
+    // Fields that make a notification distinct: the OTP value, and for
+    // owner-facing form requests (order_id = 0, always the owner's mobile)
+    // the visitor's identity and message, so two visitors never share a row.
+    foreach (array('otp', 'customer_mobile', 'name', 'message') as $field) {
+        if (isset($payload[$field])) {
+            $clean[$field] = (string) $payload[$field];
+        }
     }
     $payload_hash = hash('sha256', wp_json_encode($clean));
     $idem = hash('sha256', $template_key . '|' . (int) $order_id . '|' . $payload_hash);
@@ -611,14 +616,22 @@ function bamero_queue_order_sms($order_id, $old_status, $new_status, $order)
 add_action('woocommerce_order_status_changed', 'bamero_queue_order_sms', 20, 4);
 
 // Mobile-only policy: block platform-generated CUSTOMER mail, but keep the
-// store owner's own notifications (admin_email) alive so new orders are never
-// silent. Everything else is refused at the configuration boundary.
+// store owner's own notifications (admin_email) and staff account mail
+// (password recovery for shop managers / administrators, who are excluded
+// from OTP-only login) alive. Everything else is refused at the boundary.
 add_filter('pre_wp_' . 'mail', function ($null, $atts) {
     $admin_email = (string) get_option('admin_email');
-    $to = isset($atts['to']) ? (string) $atts['to'] : '';
+    $to = isset($atts['to']) ? (is_array($atts['to']) ? implode(',', $atts['to']) : (string) $atts['to']) : '';
     if ('' !== $admin_email && '' !== $to && false !== stripos($to, $admin_email)) {
         bamero_log_event('mail_allowed', array('reason' => 'admin_notification'));
         return null; // fall through to normal wp_mail()
+    }
+    // "Name <addr>" or a bare address: resolve the account behind it.
+    $address = preg_match('/<([^>]+)>/', $to, $m) ? $m[1] : trim($to);
+    $user = is_email($address) ? get_user_by('email', $address) : false;
+    if ($user && user_can($user, 'manage_woocommerce')) {
+        bamero_log_event('mail_allowed', array('reason' => 'staff_notification'));
+        return null;
     }
     bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
     return false;
