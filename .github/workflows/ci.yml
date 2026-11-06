@@ -49,7 +49,7 @@ jobs:
 
       - name: Check code style
         run: |
-          phpcs --standard=PSR12 --extensions=php --encoding=utf-8 -n . 2>/dev/null
+          phpcs --standard=phpcs.xml.dist --extensions=php --encoding=utf-8 -n .
           # Exit with failure if code style issues found (remove || true)
           if [ $? -ne 0 ]; then
             echo "❌ Code style violations found. Please fix before merging."
@@ -156,8 +156,12 @@ jobs:
 
       - name: Check no mock data
         run: |
-          if find . -type f -name "*mock*" -o -name "*test*" -o -name "*.md" | grep -v ".git" | read; then
-            echo "Found non-production files"
+          # Project documentation lives in the repo root and is blocked by .htaccess
+          # and excluded from deploys; only flag mock/test files and nested markdown.
+          FOUND=$(find . -type f \( -name "*mock*" -o -name "*test*" -o -path "./wp-content/*.md" \) -not -path "./.git/*" -not -path "./.github/*")
+          if [ -n "$FOUND" ]; then
+            echo "Found non-production files:"
+            echo "$FOUND"
             exit 1
           fi
 

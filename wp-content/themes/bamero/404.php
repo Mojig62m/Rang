@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 404 fallback template for the Bamero theme.
  *

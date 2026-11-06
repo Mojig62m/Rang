@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Search form — هماهنگ با استایل جست‌وجوی تم (مخصوص فروشگاه، RTL)
  *
  * @package Bamero
  */
+
 defined('ABSPATH') || exit;
 
 $bamero_search_id = 'bamero-search-input-' . wp_unique_id('s-');

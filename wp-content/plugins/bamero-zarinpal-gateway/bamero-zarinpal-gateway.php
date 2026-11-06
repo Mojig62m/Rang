@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Bamero Zarinpal Gateway
  * Description: Production WooCommerce gateway for the official Zarinpal v4 request/verify flow. Configuration is WooCommerce-settings backed with environment fallback; no credential is ever stored in code or the database.
@@ -8,10 +9,11 @@
  * Text Domain: bamero-zarinpal-gateway
  * Requires Plugins: woocommerce
  */
+
 defined('ABSPATH') || exit;
 
 define('BAMERO_ZARINPAL_VERSION', '1.1.0');
-const BAMERO_JSON_CONTENT_TYPE = BAMERO_JSON_CONTENT_TYPE;
+const BAMERO_JSON_CONTENT_TYPE = 'application/json';
 
 /**
  * Declare High-Performance Order Storage (HPOS) compatibility.
@@ -26,12 +28,14 @@ add_action('plugins_loaded', 'bamero_zarinpal_bootstrap', 20);
 /**
  * Bootstrap Zarinpal payment gateway plugin.
  */
-function bamero_zarinpal_bootstrap() {
+function bamero_zarinpal_bootstrap()
+{
     if (!class_exists('WC_Payment_Gateway')) {
         return;
     }
 
-    class Bamero_Zarinpal_Gateway extends WC_Payment_Gateway {
+    class Bamero_Zarinpal_Gateway extends WC_Payment_Gateway
+    {
         /** @var string */
         public $merchant_id = '';
         /** @var string */
@@ -44,7 +48,8 @@ function bamero_zarinpal_bootstrap() {
         /**
          * Constructor for Zarinpal gateway.
          */
-        public function __construct() {
+        public function __construct()
+        {
             $this->id                 = 'bamero_zarinpal';
             $this->method_title       = 'زرین‌پال';
             $this->method_description = 'درگاه رسمی زرین‌پال (v4). پیکربندی از تنظیمات ووکامرس خوانده می‌شود و در صورت نبود، از متغیرهای محیطی استفاده می‌کند؛ هیچ credential در کد یا دیتابیس ذخیره نمی‌شود.';
@@ -60,7 +65,9 @@ function bamero_zarinpal_bootstrap() {
             if ($is_staging && !$enable_in_staging) {
                 $this->enabled = 'no';
                 $this->description = 'درگاه پرداخت زرین‌پال در محیط staging غیرفعال است. برای فعال‌سازی، BAMERO_ENABLE_PAYMENT_IN_STAGING=true را تنظیم کنید.';
-                add_action('admin_notices', function() { echo '<div class="notice notice-warning"><p>' . esc_html__('Zarinpal payment is disabled in staging. Set BAMERO_ENABLE_PAYMENT_IN_STAGING=true to enable.', 'bamero-zarinpal-gateway') . '</p></div>'; });
+                add_action('admin_notices', function () {
+                    echo '<div class="notice notice-warning"><p>' . esc_html__('Zarinpal payment is disabled in staging. Set BAMERO_ENABLE_PAYMENT_IN_STAGING=true to enable.', 'bamero-zarinpal-gateway') . '</p></div>';
+                });
                 add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
                 add_action('woocommerce_api_bamero_zarinpal', array($this, 'handle_callback'));
                 return;
@@ -83,7 +90,8 @@ function bamero_zarinpal_bootstrap() {
         }
 
         /** Read a setting, falling back to an environment variable, then a default. */
-        private function cfg($key, $env, $fallback = '') {
+        private function cfg($key, $env, $fallback = '')
+        {
             $val = $this->get_option($key, '');
             if ('' === $val || null === $val) {
                 $env_val = getenv($env);
@@ -92,14 +100,16 @@ function bamero_zarinpal_bootstrap() {
             return ('' === $val || null === $val) ? $fallback : $val;
         }
 
-        private function is_configured() {
+        private function is_configured()
+        {
             return '' !== $this->merchant_id && '' !== $this->api_base && '' !== $this->startpay_base;
         }
 
         /**
          * Initialize form fields for gateway settings.
          */
-        public function init_form_fields() {
+        public function init_form_fields()
+        {
             $this->form_fields = array(
                 'enabled' => array(
                     'title'   => 'فعال‌سازی',
@@ -148,13 +158,15 @@ function bamero_zarinpal_bootstrap() {
         }
 
         /** Log through the shared production logger when available. */
-        private function log($event, array $context = array()) {
+        private function log($event, array $context = array())
+        {
             if (function_exists('bamero_log_event')) {
                 bamero_log_event($event, $context);
             }
         }
 
-        public function process_payment($order_id) {
+        public function process_payment($order_id)
+        {
             $order = wc_get_order($order_id);
             if (!$order) {
                 return array('result' => 'failure');
@@ -231,7 +243,8 @@ function bamero_zarinpal_bootstrap() {
             );
         }
 
-        public function handle_callback() {
+        public function handle_callback()
+        {
             $authority = isset($_GET['Authority']) ? sanitize_text_field(wp_unslash($_GET['Authority'])) : '';
             $status    = isset($_GET['Status']) ? strtoupper(sanitize_text_field(wp_unslash($_GET['Status']))) : '';
 

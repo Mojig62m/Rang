@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Header — RTL top bar + sticky nav (UI-07..15)
  *
  * @package Bamero
  */
+
 defined('ABSPATH') || exit;
 
 // Search placeholder constant
@@ -36,7 +38,7 @@ define('BAMERO_SEARCH_PLACEHOLDER', BAMERO_SEARCH_PLACEHOLDER);
             $bamero_whatsapp = bamero_whatsapp_default();
         }
         if ($bamero_instagram || $bamero_telegram || $bamero_whatsapp) :
-        ?>
+            ?>
         <div class="top-bar-social" aria-label="<?php echo esc_attr__('شبکه‌های اجتماعی', 'bamero'); ?>">
             <?php if ($bamero_instagram) : ?>
             <a href="<?php echo esc_url($bamero_instagram); ?>" target="_blank" rel="noopener noreferrer" aria-label="اینستاگرام">

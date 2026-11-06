@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Footer UI-43..46
  *
  * @package Bamero
  */
+
 defined('ABSPATH') || exit;
 
 $phone   = bamero_phone_display();

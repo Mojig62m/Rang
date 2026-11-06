@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Product card — UI-23..33
  *
  * @package Bamero
  */
+
 defined('ABSPATH') || exit;
 
 global $product;

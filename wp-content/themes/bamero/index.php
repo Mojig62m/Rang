@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fallback / Archive / Search Template for Bamero Theme
  *
@@ -41,7 +42,6 @@ if (is_search()) {
     <div class="container bamero-archive-body">
 
         <?php if (have_posts()) : ?>
-
             <div class="products-grid bamero-archive-grid">
                 <?php
                 while (have_posts()) :
@@ -83,7 +83,6 @@ if (is_search()) {
             ?>
 
         <?php else : ?>
-
             <div class="bamero-empty-state text-center">
                 <h2><?php echo esc_html__('موردی یافت نشد', 'bamero'); ?></h2>
                 <p><?php echo esc_html__('موردی مطابق جست‌وجوی شما پیدا نشد. می‌توانید عبارت دیگری را امتحان کنید یا از فروشگاه بازدید کنید.', 'bamero'); ?></p>

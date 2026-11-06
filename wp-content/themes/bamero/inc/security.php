@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bamero Theme — Security
  *
@@ -15,7 +16,8 @@ defined('ABSPATH') || exit;
 // ===== SECURITY IMPROVEMENTS =====
 
 // Remove WordPress version from RSS feeds
-function bamero_remove_wp_version_rss() {
+function bamero_remove_wp_version_rss()
+{
     return '';
 }
 add_filter('the_generator', 'bamero_remove_wp_version_rss');
@@ -28,7 +30,8 @@ add_filter('xmlrpc_enabled', '__return_false');
 // Theme keeps fallback guards only for backward compatibility.
 // =============================================================================
 
-function bamero_script_loader_nonce($tag, $handle, $src) {
+function bamero_script_loader_nonce($tag, $handle, $src)
+{
     if (is_admin()) {
         return $tag;
     }
@@ -41,7 +44,8 @@ function bamero_script_loader_nonce($tag, $handle, $src) {
 add_filter('script_loader_tag', 'bamero_script_loader_nonce', 20, 3);
 
 /** Add CSP nonce to WordPress-generated inline scripts (WP 6.4+). */
-function bamero_inline_script_nonce($attributes) {
+function bamero_inline_script_nonce($attributes)
+{
     if (is_admin()) {
         return $attributes;
     }
@@ -53,7 +57,8 @@ function bamero_inline_script_nonce($attributes) {
 add_filter('wp_inline_script_attributes', 'bamero_inline_script_nonce');
 
 /** Disable author enumeration */
-function bamero_disable_author_enum($redirect, $request) {
+function bamero_disable_author_enum($redirect, $request)
+{
     if (preg_match('/\?author=([0-9]*)/i', $request)) {
         return home_url('/');
     }
@@ -66,7 +71,8 @@ add_filter('redirect_canonical', 'bamero_disable_author_enum', 10, 2);
  * Logged-in users (block editor, admin) and the WooCommerce Store API
  * (/wc/store/*) are unaffected.
  */
-function bamero_restrict_rest_user_endpoints($endpoints) {
+function bamero_restrict_rest_user_endpoints($endpoints)
+{
     if (is_user_logged_in()) {
         return $endpoints;
     }
@@ -80,13 +86,15 @@ function bamero_restrict_rest_user_endpoints($endpoints) {
 add_filter('rest_endpoints', 'bamero_restrict_rest_user_endpoints');
 
 /** Keep author logins out of the core XML sitemap (wp-sitemap-users-*.xml). */
-function bamero_remove_sitemap_users_provider($provider, $name) {
+function bamero_remove_sitemap_users_provider($provider, $name)
+{
     return $name === 'users' ? false : $provider;
 }
 add_filter('wp_sitemaps_add_provider', 'bamero_remove_sitemap_users_provider', 10, 2);
 
 /** Do not leak author name/URL through public oEmbed responses. */
-function bamero_oembed_hide_author($data) {
+function bamero_oembed_hide_author($data)
+{
     unset($data['author_name'], $data['author_url']);
     return $data;
 }
