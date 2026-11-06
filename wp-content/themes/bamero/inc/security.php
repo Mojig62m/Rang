@@ -22,13 +22,26 @@ function bamero_remove_wp_version_rss()
 }
 add_filter('the_generator', 'bamero_remove_wp_version_rss');
 
-// Disable XML-RPC
-add_filter('xmlrpc_enabled', '__return_false');
-
 // =============================================================================
 // SECURITY HEADERS (canonical definitions live in bamero-production-core plugin)
 // Theme keeps fallback guards only for backward compatibility.
 // =============================================================================
+
+/**
+ * Fallback CSP nonce source when bamero-production-core is not active.
+ * The plugin (loaded first) owns the canonical definition and the CSP header;
+ * without it there is no CSP, but every nonce consumer below must still work.
+ */
+if (!function_exists('bamero_csp_nonce')) {
+    function bamero_csp_nonce()
+    {
+        static $nonce = null;
+        if (null === $nonce) {
+            $nonce = base64_encode(random_bytes(16));
+        }
+        return $nonce;
+    }
+}
 
 function bamero_script_loader_nonce($tag, $handle, $src)
 {
@@ -55,6 +68,23 @@ function bamero_inline_script_nonce($attributes)
     return $attributes;
 }
 add_filter('wp_inline_script_attributes', 'bamero_inline_script_nonce');
+
+/**
+ * WooCommerce prints its "woocommerce-no-js → woocommerce-js" body-class
+ * switch as a raw inline <script> (wc_no_js) that carries no CSP nonce, so
+ * the strict script-src policy blocks it and JS-only UI stays hidden.
+ * Replace it with the same snippet printed through wp_print_inline_script_tag(),
+ * which receives the nonce via the wp_inline_script_attributes filter.
+ */
+function bamero_wc_no_js_nonced()
+{
+    if (!function_exists('wc_no_js') || false === has_action('wp_footer', 'wc_no_js')) {
+        return;
+    }
+    remove_action('wp_footer', 'wc_no_js');
+    wp_print_inline_script_tag("(function(){var b=document.body;b.className=b.className.replace(/woocommerce-no-js/,'woocommerce-js');})();");
+}
+add_action('wp_footer', 'bamero_wc_no_js_nonced', 0);
 
 /** Disable author enumeration */
 function bamero_disable_author_enum($redirect, $request)

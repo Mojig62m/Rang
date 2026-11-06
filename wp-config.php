@@ -8,8 +8,8 @@
  *   2. A .env file OUTSIDE the web root (recommended): ../bamero.env or ../.env
  *   3. A .env file INSIDE the web root (blocked from HTTP by .htaccess)
  *
- * Copy .env.example to .env, fill in every value, then upload it. NEVER commit a
- * real .env. The site refuses to boot (HTTP 500) if a required value is missing
+ * Copy .env.example (repo root) to .env, fill in every value, then upload it
+ * OUTSIDE the web root. NEVER commit a real .env. The site refuses to boot (HTTP 500) if a required value is missing
  * or is still a placeholder — this prevents an insecure half-configured launch.
  */
 
@@ -163,24 +163,19 @@ define('WP_CACHE', filter_var($bamero_wp_cache !== false ? $bamero_wp_cache : '1
 define('CONCATENATE_SCRIPTS', false);
 
 /**
- * Redis Object Cache configuration for production
- * Enable via environment variables:
- * - WP_REDIS_HOST: Redis server hostname (default: 127.0.0.1)
- * - WP_REDIS_PORT: Redis server port (default: 6379)
- * - WP_REDIS_TIMEOUT: Connection timeout in seconds (default: 1)
- * - WP_REDIS_PREFIX: Cache key prefix (default: wp_)
+ * Optional persistent object cache (Redis).
+ * This repo ships NO object-cache.php drop-in; install the official
+ * "Redis Object Cache" plugin (wp.org/plugins/redis-cache) when the host
+ * provides Redis. These constants are the ones that plugin reads; they are
+ * only defined when the PHP redis extension is present so a host without
+ * Redis boots exactly like before.
  */
-$redis_host = getenv('WP_REDIS_HOST') ?: '127.0.0.1';
-$redis_port = getenv('WP_REDIS_PORT') ?: 6379;
-$redis_timeout = (int) (getenv('WP_REDIS_TIMEOUT') ?: 1);
-$redis_prefix = getenv('WP_REDIS_PREFIX') ?: 'wp_';
-
 if (extension_loaded('redis') && class_exists('Redis')) {
-    define('WP_REDIS_HOST', $redis_host);
-    define('WP_REDIS_PORT', $redis_port);
-    define('WP_REDIS_TIMEOUT', $redis_timeout);
-    define('WP_REDIS_PREFIX', $redis_prefix);
-    define('WP_CACHE_KEY_SALT', $redis_prefix);
+    define('WP_REDIS_HOST', getenv('WP_REDIS_HOST') ?: '127.0.0.1');
+    define('WP_REDIS_PORT', (int) (getenv('WP_REDIS_PORT') ?: 6379));
+    define('WP_REDIS_TIMEOUT', (int) (getenv('WP_REDIS_TIMEOUT') ?: 1));
+    define('WP_REDIS_PREFIX', getenv('WP_REDIS_PREFIX') ?: 'wp_');
+    define('WP_CACHE_KEY_SALT', getenv('WP_REDIS_PREFIX') ?: 'wp_');
 }
 
 /**

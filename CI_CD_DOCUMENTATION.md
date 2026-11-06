@@ -186,8 +186,7 @@ The CI/CD pipeline covers:
 - Purpose: Overall validation
 - Steps:
   1. Checkout code
-  2. Verify file count (< 50 files)
-  3. Check for non-production files
+  2. Verify no hardcoded secrets
 - Failure: Blocks merge if validation fails
 ```
 
@@ -241,7 +240,6 @@ The CI/CD pipeline covers:
    - chmod -R 755 wp-content
    - chmod 644 wp-config.php
    - chmod 644 .htaccess
-   - chmod 644 robots.txt
    ```
 
 5. **Post-Deploy Scripts**
@@ -333,7 +331,6 @@ TELEGRAM_CHAT_ID     # Telegram chat ID (optional)
 
 #### Job 1: Health Monitor
 - **Required Files Check:** Verifies all essential files exist
-- **File Count Validation:** Ensures file count is optimal (< 50)
 - **Non-Production Files Check:** Scans for development files
 - **WordPress Structure:** Validates WordPress directory structure
 - **Theme Structure:** Validates theme directory structure
@@ -345,7 +342,7 @@ TELEGRAM_CHAT_ID     # Telegram chat ID (optional)
 #### Job 3: Configuration Validation
 - **wp-config.php:** Validates database and security constants
 - **.htaccess:** Validates rewrite rules and security headers
-- **robots.txt:** Validates SEO configuration
+- **robots.txt:** Validates the theme's dynamic `robots_txt` filter exists
 
 **Success Criteria:**
 - ✅ All required files present
@@ -678,7 +675,7 @@ TELEGRAM_CHAT_ID
 |----------|-------------|----------------|
 | `wp-config.php` | WordPress configuration | All |
 | `.htaccess` | Web server configuration | All |
-| `robots.txt` | SEO configuration | All |
+| `wp-content/themes/bamero/inc/seo.php` | Dynamic robots.txt + structured data | All |
 | `.github/workflows/*.yml` | CI/CD configuration | GitHub Actions |
 
 ### 8.3 Environment Variables

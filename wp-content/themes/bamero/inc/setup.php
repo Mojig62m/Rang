@@ -65,6 +65,8 @@ function bamero_setup()
         'comment-list',
         'gallery',
         'caption',
+        'script',
+        'style',
     ));
 
     // Automatic feed links

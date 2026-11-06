@@ -49,15 +49,18 @@ jobs:
             --exclude='.env*' \
             --exclude='*.pem' \
             --exclude='*.key' \
+            --exclude='*.md' \
+            --exclude='phpcs.xml.dist' \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
 
           # Set permissions
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd ${{ secrets.DEPLOY_PATH }}
-            chmod -R 755 wp-content
+            # WordPress hardening guidance: directories 755, files 644
+            find wp-content -type d -exec chmod 755 {} +
+            find wp-content -type f -exec chmod 644 {} +
             chmod 644 wp-config.php
             chmod 644 .htaccess
-            chmod 644 robots.txt
           "
 
       - name: Run post-deploy scripts

@@ -19,8 +19,8 @@ function bamero_defer_scripts($tag, $handle, $src)
 {
     // JS-01/02: defer only theme main script — never core library handles
     // Only add the attribute to the external tag: rebuilding the whole $tag
-    // dropped the id attribute and the wp_add_inline_script() "before" block
-    // (window.BAMERO_CART_SELECTOR) that WordPress prints in the same string.
+    // would drop the id attribute and any wp_add_inline_script() "before"
+    // block that WordPress prints in the same string.
     if ($handle === 'bamero-script' && strpos($tag, ' defer') === false) {
         $tag = preg_replace('#<script([^>]*)\ssrc=#', '<script$1 defer src=', $tag, 1);
     }
