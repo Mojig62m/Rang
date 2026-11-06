@@ -38,8 +38,8 @@ composer.lock
 .DS_Store
 Thumbs.db
 
-# WordPress specific - NEVER commit these
-wp-config.php
+# WordPress specific - the tracked wp-config.php reads every secret from the
+# environment; never commit a copy that embeds real values.
 wp-config-*.php
 
 # Cache directories (runtime data)

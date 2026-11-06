@@ -108,7 +108,8 @@ li.product .product-quick-view:hover { text-decoration: underline; }
 .woocommerce a.button, .woocommerce button.button, .woocommerce input.button, .woocommerce #respond input#submit { border-radius: var(--bamero-radius-sm); background: var(--modern-blue); }
 .woocommerce a.button:hover, .woocommerce button.button:hover, .woocommerce input.button:hover { background: var(--modern-blue-dark); }
 
-.woocommerce-cart-form, .cart-collaterals, .woocommerce-checkout, #order_review_heading, #order_review { max-inline-size: 1100px; margin-inline: auto; }
+/* form. prefix: WooCommerce also puts "woocommerce-checkout" on <body>; an unscoped selector would turn the whole page into this grid. */
+.woocommerce-cart-form, .cart-collaterals, form.woocommerce-checkout, #order_review_heading, #order_review { max-inline-size: 1100px; margin-inline: auto; }
 .woocommerce-cart-form { padding: 8px; overflow-x: auto; border: 1px solid var(--modern-line); border-radius: var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
 .woocommerce table.shop_table { border: 0; border-collapse: separate; border-spacing: 0; }
 .woocommerce table.shop_table th { padding: 14px 12px; color: var(--modern-muted); font-size: .8rem; font-weight: 800; }
@@ -120,13 +121,13 @@ li.product .product-quick-view:hover { text-decoration: underline; }
 .woocommerce .cart_totals { padding: 22px; border: 1px solid var(--modern-line); border-radius: var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
 .woocommerce .cart_totals h2 { font-size: 1.25rem; }
 .woocommerce .cart_totals .checkout-button { inline-size: 100%; text-align: center; }
-.woocommerce-checkout { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,.72fr); gap: 24px; padding-block: 24px 70px; }
-.woocommerce-checkout #customer_details { min-inline-size: 0; }
-.woocommerce-checkout #order_review_heading { grid-column: 2; grid-row: 1; inline-size: 100%; margin: 0; padding: 22px 22px 0; border: 1px solid var(--modern-line); border-block-end: 0; border-radius: var(--modern-radius) var(--modern-radius) 0 0; background: var(--bamero-light); }
-.woocommerce-checkout #order_review { grid-column: 2; grid-row: 1; align-self: start; margin-block-start: 50px; padding: 0 22px 22px; border: 1px solid var(--modern-line); border-block-start: 0; border-radius: 0 0 var(--modern-radius) var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
-.woocommerce-checkout .col2-set { display: grid; gap: 18px; }
-.woocommerce-checkout .col-1, .woocommerce-checkout .col-2 { float: none; inline-size: auto; padding: 22px; border: 1px solid var(--modern-line); border-radius: var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
-.woocommerce-checkout h3 { margin-block: 0 18px; font-size: 1.15rem; }
+form.woocommerce-checkout { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,.72fr); gap: 24px; padding-block: 24px 70px; }
+form.woocommerce-checkout #customer_details { min-inline-size: 0; }
+form.woocommerce-checkout #order_review_heading { grid-column: 2; grid-row: 1; inline-size: 100%; margin: 0; padding: 22px 22px 0; border: 1px solid var(--modern-line); border-block-end: 0; border-radius: var(--modern-radius) var(--modern-radius) 0 0; background: var(--bamero-light); }
+form.woocommerce-checkout #order_review { grid-column: 2; grid-row: 1; align-self: start; margin-block-start: 50px; padding: 0 22px 22px; border: 1px solid var(--modern-line); border-block-start: 0; border-radius: 0 0 var(--modern-radius) var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
+form.woocommerce-checkout .col2-set { display: grid; gap: 18px; }
+form.woocommerce-checkout .col-1, form.woocommerce-checkout .col-2 { float: none; inline-size: auto; padding: 22px; border: 1px solid var(--modern-line); border-radius: var(--modern-radius); background: var(--bamero-light); box-shadow: var(--modern-shadow); }
+form.woocommerce-checkout h3 { margin-block: 0 18px; font-size: 1.15rem; }
 
 .site-footer { margin-block-start: 30px; padding-block: 52px 18px; background: var(--modern-ink); }
 .footer-grid { max-inline-size: 1320px; }
@@ -141,9 +142,9 @@ li.product .product-quick-view:hover { text-decoration: underline; }
 }
 @media (max-width: 900px) {
   .header-search { display: none; }
-  .woocommerce-checkout { display: block; }
-  .woocommerce-checkout #order_review_heading, .woocommerce-checkout #order_review { max-inline-size: none; margin-inline: 0; }
-  .woocommerce-checkout #order_review_heading { margin-block-start: 24px; }
+  form.woocommerce-checkout { display: block; }
+  form.woocommerce-checkout #order_review_heading, form.woocommerce-checkout #order_review { max-inline-size: none; margin-inline: 0; }
+  form.woocommerce-checkout #order_review_heading { margin-block-start: 24px; }
 }
 @media (max-width: 767px) {
   .site-header { padding-block: 10px; }
@@ -357,7 +358,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   li.product .product-info { padding: 12px 12px 14px; }
   .woocommerce div.product form.cart .button { inline-size: 100%; }
   .woocommerce div.product div.summary { margin-block-start: 16px; }
-  .woocommerce-checkout .col2-set .col-1, .woocommerce-checkout .col2-set .col-2 { padding: 16px; }
+  form.woocommerce-checkout .col2-set .col-1, form.woocommerce-checkout .col2-set .col-2 { padding: 16px; }
   .footer-grid { padding-inline: 16px; }
   /* نکته: CTA چسبان موبایلِ صفحهٔ محصول در css/woocommerce.css (single_add_to_cart_button،
      fixed + safe-area) از قبل پیاده و کامل است — این لایه چیزی به آن اضافه نمی‌کند. */

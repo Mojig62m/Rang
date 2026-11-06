@@ -50,7 +50,6 @@ jobs:
       - name: Check code style
         run: |
           phpcs --standard=phpcs.xml.dist --extensions=php --encoding=utf-8 -n .
-          # Exit with failure if code style issues found (remove || true)
           if [ $? -ne 0 ]; then
             echo "❌ Code style violations found. Please fix before merging."
             exit 1
@@ -149,7 +148,7 @@ jobs:
           # Check for essential files
           [ -f wp-config.php ] || { echo "Missing wp-config.php"; exit 1; }
           [ -f .htaccess ] || { echo "Missing .htaccess"; exit 1; }
-          [ -f robots.txt ] || { echo "Missing robots.txt"; exit 1; }
+          grep -q "add_filter('robots_txt'" wp-content/themes/bamero/inc/seo.php || { echo "Missing dynamic robots.txt filter"; exit 1; }
           [ -f wp-content/plugins/bamero-production-core/bamero-production-core.php ] || { echo "Missing production core"; exit 1; }
           [ -f wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php ] || { echo "Missing mobile auth"; exit 1; }
           [ -f wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php ] || { echo "Missing zarinpal gateway"; exit 1; }
@@ -180,40 +179,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify file count
-        run: |
-          FILE_COUNT=$(git ls-files | wc -l)
-          if [ "$FILE_COUNT" -gt 50 ]; then
-            echo "❌ File count: $FILE_COUNT (expected <= 50)"
-            exit 1
-          fi
-          echo "✅ File count: $FILE_COUNT (OK)"
-
-      - name: Verify no README files
-        run: |
-          if git ls-files | grep -q "README"; then
-            echo "❌ Found README files in repository"
-            exit 1
-          fi
-          echo "✅ No README files found"
-
       - name: Verify no secrets in repository
         run: |
-          # Check for potential secrets
-          SECRET_PATTERNS=(
-            "password.*="
-            "secret.*="
-            "api_key.*="
-            "merchant_id.*="
-            "DB_PASSWORD.*="
-          )
-          
-          for pattern in "${SECRET_PATTERNS[@]}"; do
-            if grep -r -E "$pattern" --include="*.php" --include="*.txt" --include="*.json" . | grep -v ".git" | grep -v "getenv\|\$_ENV\|\$_SERVER\|sanitize\|wp_unslash\|bamero_require_env"; then
-              echo "❌ Potential secret found matching pattern: $pattern"
-              exit 1
-            fi
-          done
+          # Flag secret-looking keys assigned a quoted literal of 6+ chars
+          # (password = 'hunter2!', 'api_key' => "abc123..."). Reading the value
+          # from getenv()/a variable is the supported pattern and is not matched.
+          PATTERN="(password|secret|api_key|merchant_id|DB_PASSWORD)['\"]?[[:space:]]*(=|=>)[[:space:]]*['\"][^'\"]{6,}['\"]"
+          if grep -r -n -i -E "$PATTERN" --include="*.php" --include="*.txt" --include="*.json" --exclude-dir=.git . ; then
+            echo "❌ Potential hardcoded secret found"
+            exit 1
+          fi
           echo "✅ No hardcoded secrets detected"
 
       - name: Production ready

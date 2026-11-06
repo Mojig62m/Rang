@@ -326,11 +326,7 @@ function bamero_output_entity_graph()
     if (is_admin()) {
         return;
     }
-    // SEO-03: Rank Math owns structured data when active
-    if (defined('RANK_MATH_VERSION')) {
-        return;
-    }
-    // Yoast / AIOSEO / SEOPress also print a full graph; avoid duplicates.
+    // SEO-03: Rank Math / Yoast / AIOSEO / SEOPress print their own graph; avoid duplicates.
     if (bamero_seo_plugin_active()) {
         return;
     }
@@ -601,18 +597,45 @@ add_filter('wp_robots', 'bamero_meta_robots');
 // =============================================================================
 
 /**
- * Serve robots.txt dynamically so the Sitemap URL always matches the real
- * domain the owner configures under Settings > General. A static file would
- * hard-code a host that does not exist yet.
+ * Serve robots.txt dynamically (WordPress answers /robots.txt itself when no
+ * physical file exists) so the Sitemap URL always matches the real domain the
+ * owner configures under Settings > General.
+ *
+ * Deliberately NOT disallowed: /wp-includes/, /wp-content/themes/ and
+ * /wp-content/plugins/. Googlebot must fetch CSS/JS to render and index the
+ * page; blocking those paths hurts ranking
+ * (https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics).
  */
 function bamero_robots_txt($output, $public)
 {
     if (!$public) {
         return $output;
     }
-    if (stripos($output, 'Sitemap:') === false) {
-        $output = rtrim($output) . "\n\nSitemap: " . home_url('/wp-sitemap.xml') . "\n";
+    // Core (5.5+) and WooCommerce already print the sitemap line and the
+    // add-to-cart / wc-uploads rules; only add what is still missing and keep
+    // the Disallow block above the Sitemap line.
+    $rules = array('/xmlrpc.php', '/wp-login.php', '/wp-signup.php', '/readme.html', '/license.txt', '/*?s=', '/*?orderby=');
+    $lines = array();
+    $sitemaps = array();
+    foreach (preg_split('/\r?\n/', rtrim($output)) as $line) {
+        $line = trim($line);
+        if ($line === '') {
+            continue; // a blank line would end the User-agent group (RFC 9309 §2.2)
+        }
+        if (stripos($line, 'Sitemap:') === 0) {
+            $sitemaps[] = $line;
+        } else {
+            $lines[] = $line;
+        }
     }
-    return $output;
+    foreach ($rules as $rule) {
+        if (!in_array('Disallow: ' . $rule, $lines, true)) {
+            $lines[] = 'Disallow: ' . $rule;
+        }
+    }
+    if (!$sitemaps) {
+        $sitemaps[] = 'Sitemap: ' . home_url('/wp-sitemap.xml');
+    }
+    return implode("\n", $lines) . "\n\n" . implode("\n", $sitemaps) . "\n";
 }
 add_filter('robots_txt', 'bamero_robots_txt', 99, 2);

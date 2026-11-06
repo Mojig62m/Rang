@@ -87,10 +87,8 @@ function bamero_process_color_consultation()
         exit;
     }
 
-    $queued = function_exists('bamero_queue_notification')
-        ? bamero_queue_notification(0, get_current_user_id(), 'color_consultation', array('mobile' => $phone, 'name' => $name, 'message' => $message))
-        : new WP_Error('notification_unavailable');
-    wp_safe_redirect(add_query_arg('consultation_status', is_wp_error($queued) ? 'error' : 'success', $redirect_url));
+    $delivered = bamero_notify_owner('color_consultation', $name, $phone, $message);
+    wp_safe_redirect(add_query_arg('consultation_status', $delivered ? 'success' : 'error', $redirect_url));
     exit;
 }
 add_action('admin_post_bamero_color_consultation', 'bamero_process_color_consultation');
@@ -125,14 +123,71 @@ function bamero_process_contact_submit()
         exit;
     }
 
-    $queued = function_exists('bamero_queue_notification')
-        ? bamero_queue_notification(0, get_current_user_id(), 'contact_request', array('mobile' => $phone, 'name' => $name, 'message' => $message))
-        : new WP_Error('notification_unavailable');
-    wp_safe_redirect(add_query_arg('contact_status', is_wp_error($queued) ? 'error' : 'success', $redirect));
+    $delivered = bamero_notify_owner('contact_request', $name, $phone, $message);
+    wp_safe_redirect(add_query_arg('contact_status', $delivered ? 'success' : 'error', $redirect));
     exit;
 }
 add_action('admin_post_bamero_contact_submit', 'bamero_process_contact_submit');
 add_action('admin_post_nopriv_bamero_contact_submit', 'bamero_process_contact_submit');
+
+/**
+ * Deliver a storefront form submission to the store OWNER.
+ *
+ * Both channels are attempted; the submission counts as delivered when at
+ * least one succeeds:
+ *  1. SMS via the production-core outbox to the owner's mobile (Customizer
+ *     phone), carrying the visitor's name and mobile so the owner can call
+ *     back from the SMS itself.
+ *  2. E-mail to admin_email with the full message (the mobile-only mail
+ *     policy in production-core explicitly allows admin_email).
+ *
+ * @param string $template_key 'contact_request' | 'color_consultation'.
+ * @param string $name         Visitor name (sanitized).
+ * @param string $phone        Visitor mobile, normalised 98… form.
+ * @param string $message      Visitor message (sanitized).
+ * @return bool True when at least one channel accepted the notification.
+ */
+function bamero_notify_owner($template_key, $name, $phone, $message)
+{
+    $labels = array(
+        'contact_request'    => __('پیام جدید از فرم تماس', 'bamero'),
+        'color_consultation' => __('درخواست جدید مشاورهٔ رنگ', 'bamero'),
+    );
+    $label = isset($labels[$template_key]) ? $labels[$template_key] : $template_key;
+    $delivered = false;
+
+    $owner_mobile = bamero_owner_mobile();
+    if ($owner_mobile !== '' && function_exists('bamero_queue_notification')) {
+        $queued = bamero_queue_notification(0, get_current_user_id(), $template_key, array(
+            'mobile'          => $owner_mobile,
+            'customer_mobile' => $phone,
+            'name'            => $name,
+            'message'         => $message,
+        ));
+        $delivered = !is_wp_error($queued);
+    }
+
+    $admin_email = (string) get_option('admin_email');
+    if ($admin_email !== '') {
+        $body = sprintf(
+            "%s\n\n%s: %s\n%s: %s\n\n%s:\n%s\n",
+            $label,
+            __('نام', 'bamero'),
+            $name,
+            __('شمارهٔ موبایل', 'bamero'),
+            $phone,
+            __('پیام', 'bamero'),
+            $message
+        );
+        $sent = wp_mail($admin_email, sprintf('[%s] %s', get_bloginfo('name'), $label), $body);
+        $delivered = $delivered || $sent;
+    }
+
+    if (function_exists('bamero_log_event')) {
+        bamero_log_event('owner_form_notification', array('template_key' => $template_key, 'delivered' => $delivered));
+    }
+    return $delivered;
+}
 
 /** Register owner-configurable storefront settings (Appearance > Customize). */
 function bamero_customize_register($wp_customize)

@@ -423,10 +423,11 @@ SMS_IR_ORDER_PARAMETER=OrderId
 ```bash
 WP_CACHE=true
 DISABLE_WP_CRON=true
+# Optional, only with the official Redis Object Cache plugin
 WP_REDIS_HOST=127.0.0.1
 WP_REDIS_PORT=6379
-WP_REDIS_PASSWORD=your_redis_password
-WP_REDIS_DB=0
+WP_REDIS_TIMEOUT=1
+WP_REDIS_PREFIX=wp_
 ```
 
 #### CDN Configuration

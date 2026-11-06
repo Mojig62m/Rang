@@ -156,12 +156,12 @@ jobs:
 
       - name: Check .htaccess blocks sensitive files
         run: |
-          if [ -f .htaccess ]; then
-            grep -q "wp-config\.php" .htaccess
-            grep -q "xmlrpc\.php" .htaccess
-            grep -q "readme\.html" .htaccess
-            grep -q "\.env" .htaccess
-          fi
+          # .htaccess escapes the dot in its regexes (wp-config\.php), so match
+          # the file names loosely instead of as literal "name.ext".
+          test -f .htaccess
+          for name in wp-config xmlrpc readme '\.env'; do
+            grep -q "$name" .htaccess || { echo "❌ .htaccess does not block $name"; exit 1; }
+          done
 
       - name: Check for sensitive file exposure
         run: |
@@ -169,7 +169,8 @@ jobs:
           echo "=== P0: Sensitive File Exposure Check ==="
           
           # Check for .env files (these may contain real credentials)
-          if find . -name ".env*" -not -path "./.git/*" -not -path "./.github/*" | read; then
+          # .env.example is the documented template (placeholders only); real .env files are ignored by git.
+          if find . -name ".env*" -not -name ".env.example" -not -path "./.git/*" -not -path "./.github/*" | read; then
             echo "❌ P0: .env files found in repository - BLOCKING"
             echo "Action required: Remove .env files and rotate all credentials"
             exit 1

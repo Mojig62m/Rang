@@ -34,7 +34,6 @@
 - [ ] ✅ All security headers present in .htaccess
 - [ ] ✅ CSP implementation verified
 - [ ] ✅ WooCommerce compatibility confirmed
-- [ ] ✅ File structure validated (< 50 files)
 - [ ] ✅ No non-production files (docker, scripts, docs, tests)
 - [ ] ✅ No hardcoded credentials or secrets
 - [ ] ✅ All inputs sanitized
@@ -54,7 +53,7 @@
 
 - [ ] ✅ `wp-config.php` has production settings
 - [ ] ✅ `.htaccess` has security rules
-- [ ] ✅ `robots.txt` has SEO rules
+- [ ] ✅ `/robots.txt` (dynamic, theme) lists the real Sitemap URL
 - [ ] ✅ All environment variables set
 - [ ] ✅ Payment gateway configured (ZarinPal)
 - [ ] ✅ SMS provider configured (SMS.ir)

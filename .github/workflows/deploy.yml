@@ -49,15 +49,26 @@ jobs:
             --exclude='.env*' \
             --exclude='*.pem' \
             --exclude='*.key' \
+            --exclude='*.md' \
+            --exclude='phpcs.xml.dist' \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
 
           # Set permissions
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd ${{ secrets.DEPLOY_PATH }}
-            chmod -R 755 wp-content
+            # rsync is additive (no --delete: WordPress core lives in the same
+            # webroot). Remove files this repo no longer ships: the static
+            # robots.txt (now dynamic) and the legacy Bamero object-cache
+            # drop-in (only that one; a Redis Object Cache plugin drop-in stays).
+            rm -f robots.txt
+            if [ -f wp-content/object-cache.php ] && grep -q 'Bamero_Redis_Object_Cache' wp-content/object-cache.php; then
+              rm -f wp-content/object-cache.php
+            fi
+            # WordPress hardening guidance: directories 755, files 644
+            find wp-content -type d -exec chmod 755 {} +
+            find wp-content -type f -exec chmod 644 {} +
             chmod 644 wp-config.php
             chmod 644 .htaccess
-            chmod 644 robots.txt
           "
 
       - name: Run post-deploy scripts

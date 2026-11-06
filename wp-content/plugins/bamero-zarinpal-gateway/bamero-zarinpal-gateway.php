@@ -21,6 +21,7 @@ const BAMERO_JSON_CONTENT_TYPE = 'application/json';
 add_action('before_woocommerce_init', function () {
     if (class_exists('Automattic\\WooCommerce\\Utilities\\FeaturesUtil')) {
         \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
     }
 });
 
@@ -346,5 +347,28 @@ function bamero_zarinpal_bootstrap()
     add_filter('woocommerce_payment_gateways', function ($gateways) {
         $gateways[] = 'Bamero_Zarinpal_Gateway';
         return $gateways;
+    });
+}
+
+/**
+ * Checkout Block support.
+ *
+ * The block-based checkout (WooCommerce >= 8.3 default) only lists payment
+ * methods registered through the Blocks PaymentMethodRegistry; a classic
+ * WC_Payment_Gateway alone is invisible there. The integration name MUST equal
+ * the gateway id so the server-side gateway processes the block order.
+ * Docs: https://developer.woocommerce.com/docs/cart-and-checkout-payment-method-integration-for-the-checkout-block/
+ */
+add_action('woocommerce_blocks_loaded', 'bamero_zarinpal_register_block_support');
+function bamero_zarinpal_register_block_support()
+{
+    if (!class_exists('Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType')) {
+        return;
+    }
+
+    require_once __DIR__ . '/blocks/class-bamero-zarinpal-blocks-support.php';
+
+    add_action('woocommerce_blocks_payment_method_type_registration', function ($registry) {
+        $registry->register(new Bamero_Zarinpal_Blocks_Support());
     });
 }

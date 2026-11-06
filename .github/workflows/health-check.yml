@@ -20,7 +20,6 @@ jobs:
           REQUIRED_FILES=(
             "wp-config.php"
             ".htaccess"
-            "robots.txt"
             "wp-content/plugins/bamero-production-core/bamero-production-core.php"
             "wp-content/plugins/bamero-mobile-auth/bamero-mobile-auth.php"
             "wp-content/plugins/bamero-zarinpal-gateway/bamero-zarinpal-gateway.php"
@@ -167,11 +166,10 @@ jobs:
 
       - name: Check robots.txt
         run: |
-          if [ -f robots.txt ]; then
-            grep -q "User-agent" robots.txt || { echo "❌ Invalid robots.txt"; exit 1; }
-            grep -q "Disallow" robots.txt || { echo "❌ Invalid robots.txt"; exit 1; }
-            echo "✅ robots.txt validation passed"
-          fi
+          # robots.txt is served dynamically by the theme (inc/seo.php) so the
+          # Sitemap line always carries the configured home URL.
+          grep -q "add_filter('robots_txt'" wp-content/themes/bamero/inc/seo.php || { echo "❌ Missing dynamic robots.txt filter"; exit 1; }
+          echo "✅ robots.txt validation passed"
 
   final-health-report:
     name: Health Check Report

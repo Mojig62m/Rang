@@ -7,9 +7,6 @@
  */
 
 defined('ABSPATH') || exit;
-
-// Search placeholder constant
-define('BAMERO_SEARCH_PLACEHOLDER', BAMERO_SEARCH_PLACEHOLDER);
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?> dir="rtl">
 <head>

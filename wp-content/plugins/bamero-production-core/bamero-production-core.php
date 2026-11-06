@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Bamero Production Core
- * Description: Production controls for Bamero: fail-closed security, rate limiting, idempotent checkout, signed callbacks and structured telemetry.
+ * Description: Production controls for Bamero: fail-closed security headers (CSP), rate limiting, session hardening, SMS notification outbox, health endpoints and structured telemetry.
  * Version: 1.0.0
  * Author: Bamero
  * License: MIT
@@ -12,7 +12,6 @@
 defined('ABSPATH') || exit;
 
 const BAMERO_PRODUCTION_CORE_VERSION = '1.0.0';
-const BAMERO_CART_SELECTOR = '.bamero-mini-cart';
 const BAMERO_DATETIME_FORMAT = 'Y-m-d H:i:s';
 
 function bamero_request_id()
@@ -107,21 +106,12 @@ function bamero_rate_limit_account_page()
 add_action('template_redirect', 'bamero_rate_limit_account_page', 2);
 
 /**
- * Disable unused WordPress features for security hardening.
+ * Security hardening: XML-RPC off (brute-force / pingback amplification
+ * vector) and no outgoing pingbacks. Head-bloat removal (RSD, WLW, emoji,
+ * oEmbed discovery) is owned by the theme's performance module.
  */
 function bamero_disable_unused_features()
 {
-    remove_action(
-        'wp_head',
-        'rsd_link'
-    );
-    remove_action('wp_head', 'wlwmanifest_link');
-    remove_action('wp_head', 'wp_shortlink_wp_head');
-    remove_action('wp_head', 'wp_oembed_add_discovery_links');
-    remove_action('wp_head', 'rest_output_link_wp_head');
-    remove_action('template_redirect', 'rest_output_rsd');
-    remove_action('wp_head', 'print_emoji_detection_script', 7);
-    remove_action('wp_print_styles', 'print_emoji_styles');
     add_filter('xmlrpc_enabled', '__return_false');
     add_filter('pre_ping', '__return_empty_array');
 }
@@ -141,7 +131,7 @@ if (! function_exists('bamero_security_headers')) {
         header('Permissions-Policy: geolocation=(), microphone=(), camera=(), usb=()');
         header('Cross-Origin-Opener-Policy: same-origin');
         header('X-Permitted-Cross-Domain-Policies: none');
-        $csp = 'default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-src \'none\'; frame-ancestors \'self\'; form-action \'self\'; img-src \'self\' data: https:; style-src \'self\'; style-src-attr \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;';
+        $csp = 'default-src \'self\'; base-uri \'self\'; object-src \'none\'; frame-src \'none\'; frame-ancestors \'self\'; form-action \'self\'; img-src \'self\' data: https:; style-src \'self\' \'unsafe-inline\'; font-src \'self\'; script-src \'self\' \'nonce-' . bamero_csp_nonce() . '\'; connect-src \'self\' https:;';
         // HTTPS-only directives: never sent over plain http (local/staging stay usable).
         if (is_ssl()) {
             $csp .= ' upgrade-insecure-requests;';
@@ -151,21 +141,6 @@ if (! function_exists('bamero_security_headers')) {
     }
 }
 add_action('send_headers', 'bamero_security_headers', 1);
-function bamero_checkout_idempotency($order, $posted)
-{
-    if (empty($_POST['bamero_idempotency_key'])) {
-        return;
-    }
-    $key = sanitize_text_field(wp_unslash($_POST['bamero_idempotency_key']));
-    if (strlen($key) < 16 || strlen($key) > 128) {
-        return;
-    }
-    if (is_object($order) && is_callable(array($order, 'update_meta_data'))) {
-        $order->update_meta_data('_idempotency_key', hash('sha256', $key));
-    }
-}
-add_action('woocommerce_checkout_create_order', 'bamero_checkout_idempotency', 10, 2);
-
 function bamero_private_cache_headers()
 {
     $account = function_exists('is_account_page') && is_account_page();
@@ -245,80 +220,6 @@ function bamero_health_rest_routes()
 }
 add_action('rest_api_init', 'bamero_health_rest_routes');
 
-function bamero_find_idempotent_order($order_id)
-{
-    if (empty($_POST['bamero_idempotency_key'])) {
-        return $order_id;
-    }
-    $key = sanitize_text_field(wp_unslash($_POST['bamero_idempotency_key']));
-    if (strlen($key) < 16 || strlen($key) > 128) {
-        return $order_id;
-    }
-    $orders = wc_get_orders(array('limit' => 1, 'return' => 'ids', 'meta_key' => '_idempotency_key', 'meta_value' => hash('sha256', $key)));
-    return !empty($orders) ? (int) $orders[0] : $order_id;
-}
-add_filter('woocommerce_checkout_order_processed', 'bamero_find_idempotent_order', 10, 1);
-
-function bamero_verify_payment_callback($payload, $signature)
-{
-    $secret = getenv('BAMERO_PAYMENT_WEBHOOK_SECRET');
-    if (!$secret || !$signature || !is_string($payload)) {
-        return false;
-    }
-    $expected = hash_hmac('sha256', $payload, $secret);
-    return hash_equals($expected, (string) $signature);
-}
-
-function bamero_payment_callback_guard()
-{
-    if (!isset($_GET['bamero_payment_callback'])) {
-        return;
-    }
-    $payload = file_get_contents('php://input');
-    $signature = isset($_SERVER['HTTP_X_BAMERO_SIGNATURE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_BAMERO_SIGNATURE'])) : '';
-    if (!bamero_verify_payment_callback($payload, $signature)) {
-        bamero_log_event('payment_callback_rejected', array('reason' => 'invalid_signature'));
-        status_header(401);
-        wp_die(esc_html__('callback نامعتبر است.', 'bamero-production-core'), '', array('response' => 401));
-    }
-    bamero_log_event('payment_callback_accepted', array('payload_bytes' => strlen($payload)));
-}
-add_action('template_redirect', 'bamero_payment_callback_guard', 1);
-
-function bamero_enqueue_cart_contract()
-{
-    if (!function_exists('is_woocommerce') || (!is_woocommerce() && !is_cart() && !is_checkout())) {
-        return;
-    }
-    wp_add_inline_script('bamero-script', 'window.BAMERO_CART_SELECTOR=' . wp_json_encode(BAMERO_CART_SELECTOR) . ';', 'before');
-}
-add_action('wp_enqueue_scripts', 'bamero_enqueue_cart_contract', 30);
-
-function bamero_cart_fragment($fragments)
-{
-    if (!function_exists('WC') || !WC()->cart) {
-        return $fragments;
-    }
-    ob_start();
-    ?>
-    <a href="<?php echo esc_url(wc_get_cart_url()); ?>" class="mini-cart-link bamero-mini-cart" aria-label="<?php echo esc_attr__('سبد خرید', 'bamero'); ?>">
-        <span class="cart-count"><?php echo esc_html((string) WC()->cart->get_cart_contents_count()); ?></span>
-    </a>
-    <?php
-    $fragments[BAMERO_CART_SELECTOR] = ob_get_clean();
-    return $fragments;
-}
-add_filter('woocommerce_add_to_cart_fragments', 'bamero_cart_fragment');
-
-function bamero_invalidate_product_cache($post_id)
-{
-    if (get_post_type($post_id) === 'product') {
-        delete_transient('bamero_home_products');
-    }
-}
-add_action('save_post_product', 'bamero_invalidate_product_cache');
-add_action('before_delete_post', 'bamero_invalidate_product_cache');
-
 function bamero_observe_order($order_id)
 {
     $order = wc_get_order($order_id);
@@ -396,17 +297,6 @@ function bamero_enforce_session_timeout()
     }
 }
 add_action('init', 'bamero_enforce_session_timeout', 20);
-
-function bamero_admin_health_notice()
-{
-    if (!current_user_can('manage_options')) {
-        return;
-    }
-    if (!get_option('bamero_production_core_health')) {
-        echo '<div class="notice notice-warning"><p>' . esc_html__('Bamero Production Core فعال است؛ Redis و secret درگاه را در محیط production بررسی کنید.', 'bamero-production-core') . '</p></div>';
-    }
-}
-add_action('admin_notices', 'bamero_admin_health_notice');
 
 
 /**
@@ -514,8 +404,6 @@ function bamero_install_notification_outbox()
     update_option('bamero_notification_outbox_db_version', BAMERO_OUTBOX_DB_VERSION, true);
 }
 register_activation_hook(__FILE__, 'bamero_install_notification_outbox');
-add_action('after_switch_theme', 'bamero_install_notification_outbox');
-add_action('activated_plugin', 'bamero_install_notification_outbox');
 
 /**
  * Deploy-order safety net: guarantee the outbox table exists no matter in
@@ -542,8 +430,13 @@ function bamero_queue_notification($order_id, $user_id, $template_key, array $pa
         return $schema;
     }
     $clean = array('mobile' => isset($payload['mobile']) ? (string) $payload['mobile'] : '', 'order_id' => (int) $order_id, 'template_key' => sanitize_key($template_key));
-    if (isset($payload['otp'])) {
-        $clean['otp'] = (string) $payload['otp'];
+    // Fields that make a notification distinct: the OTP value, and for
+    // owner-facing form requests (order_id = 0, always the owner's mobile)
+    // the visitor's identity and message, so two visitors never share a row.
+    foreach (array('otp', 'customer_mobile', 'name', 'message') as $field) {
+        if (isset($payload[$field])) {
+            $clean[$field] = (string) $payload[$field];
+        }
     }
     $payload_hash = hash('sha256', wp_json_encode($clean));
     $idem = hash('sha256', $template_key . '|' . (int) $order_id . '|' . $payload_hash);
@@ -613,6 +506,13 @@ function bamero_sms_ir_provider_send($result, $mobile, $template_key, array $pay
     }
     if (isset($payload['order_id'])) {
         $parameters[] = array('name' => (string) (getenv('SMS_IR_ORDER_PARAMETER') ?: 'OrderId'), 'value' => (string) $payload['order_id']);
+    }
+    // Owner-facing templates (contact_request / color_consultation): who asked and how to call back.
+    if (isset($payload['name'])) {
+        $parameters[] = array('name' => (string) (getenv('SMS_IR_NAME_PARAMETER') ?: 'Name'), 'value' => mb_substr((string) $payload['name'], 0, 25));
+    }
+    if (isset($payload['customer_mobile'])) {
+        $parameters[] = array('name' => (string) (getenv('SMS_IR_MOBILE_PARAMETER') ?: 'Mobile'), 'value' => preg_replace('/\D+/', '', (string) $payload['customer_mobile']));
     }
     $response = wp_remote_post($base . '/send/verify', array(
         'timeout' => max(3, (int) (getenv('SMS_TIMEOUT') ?: 5)),
@@ -716,23 +616,63 @@ function bamero_queue_order_sms($order_id, $old_status, $new_status, $order)
 add_action('woocommerce_order_status_changed', 'bamero_queue_order_sms', 20, 4);
 
 // Mobile-only policy: block platform-generated CUSTOMER mail, but keep the
-// store owner's own notifications (admin_email) alive so new orders are never
-// silent. Everything else is refused at the configuration boundary.
-add_filter('pre_wp_' . 'mail', function ($null, $atts) {
-    $admin_email = (string) get_option('admin_email');
-    $to = isset($atts['to']) ? (string) $atts['to'] : '';
-    if ('' !== $admin_email && '' !== $to && false !== stripos($to, $admin_email)) {
-        bamero_log_event('mail_allowed', array('reason' => 'admin_notification'));
-        return null; // fall through to normal wp_mail()
+// store owner's own notifications (admin_email) and staff account mail
+// (password recovery for shop managers / administrators, who are excluded
+// from OTP-only login) alive. Everything else is refused at the boundary.
+/**
+ * True when ONE e-mail address may receive platform mail: the store owner's
+ * admin_email, or a staff account (manage_woocommerce) — e.g. password
+ * recovery for administrators / shop managers who are excluded from OTP login.
+ */
+function bamero_mail_recipient_allowed($address)
+{
+    $address = strtolower(trim((string) $address));
+    if ('' === $address || !is_email($address)) {
+        return false;
     }
-    bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
-    return false;
+    if ($address === strtolower(trim((string) get_option('admin_email')))) {
+        return true;
+    }
+    $user = get_user_by('email', $address);
+    return $user && user_can($user, 'manage_woocommerce');
+}
+
+/** Split "A <a@x>, b@y" strings / arrays into bare addresses. */
+function bamero_mail_addresses($value)
+{
+    $items = is_array($value) ? $value : explode(',', (string) $value);
+    $out = array();
+    foreach ($items as $item) {
+        $item = trim((string) $item);
+        if ('' === $item) {
+            continue;
+        }
+        $out[] = preg_match('/<([^>]+)>/', $item, $m) ? trim($m[1]) : $item;
+    }
+    return $out;
+}
+
+add_filter('pre_wp_' . 'mail', function ($null, $atts) {
+    $recipients = bamero_mail_addresses(isset($atts['to']) ? $atts['to'] : '');
+    $headers = isset($atts['headers']) ? (is_array($atts['headers']) ? $atts['headers'] : explode("\n", (string) $atts['headers'])) : array();
+    foreach ($headers as $header) {
+        if (preg_match('/^\s*(cc|bcc)\s*:\s*(.+)$/i', (string) $header, $m)) {
+            $recipients = array_merge($recipients, bamero_mail_addresses($m[2]));
+        }
+    }
+    if (!$recipients) {
+        bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
+        return false;
+    }
+    foreach ($recipients as $address) {
+        if (!bamero_mail_recipient_allowed($address)) {
+            bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
+            return false;
+        }
+    }
+    bamero_log_event('mail_allowed', array('reason' => 'owner_or_staff_notification'));
+    return null; // fall through to normal wp_mail()
 }, 10, 2);
-add_filter('woocommerce_email_enabled_customer_processing_order', '__return_false');
-add_filter('woocommerce_email_enabled_customer_completed_order', '__return_false');
-add_filter('woocommerce_email_enabled_customer_refunded_order', '__return_false');
-add_filter('woocommerce_email_enabled_customer_reset_password', '__return_false');
-add_filter('woocommerce_email_enabled_customer_new_account', '__return_false');
 
 /** Register Iranian currencies (IRR primary, IRT legacy) as first-class WooCommerce currencies with proper symbols. */
 function bamero_register_ir_currencies($currencies)

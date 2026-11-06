@@ -23,7 +23,7 @@ Total Files: 49
 │   ├── wp-config.php (production-ready)
 │   ├── .htaccess (security hardened)
 │   ├── .gitignore
-│   └── robots.txt (SEO optimized)
+│   └── robots.txt served dynamically by the theme (inc/seo.php)
 ├── Plugins: 3 files
 │   ├── bamero-production-core/bamero-production-core.php
 │   ├── bamero-mobile-auth/bamero-mobile-auth.php
@@ -36,8 +36,7 @@ Total Files: 49
 │   └── Assets: 2 files
 └── New Improvements: 3 files
     ├── wp-config.php (updated)
-    ├── cron-setup.sh
-    └── wp-content/object-cache.php
+    └── cron-setup.sh
 ```
 
 ### Cleanup Achievements
@@ -101,7 +100,7 @@ Total Files: 49
 
 | Feature | Status | Implementation | Verification |
 |---------|--------|----------------|--------------|
-| **robots.txt** | ✅ Complete | Standard rules + WordPress exclusions | SEO optimized |
+| **robots.txt** | ✅ Complete | Dynamic (theme `robots_txt` filter); CSS/JS paths stay crawlable | SEO optimized |
 | **Schema Markup** | ✅ Complete | Organization, LocalBusiness, WebSite, Product, BreadcrumbList | Structured data |
 | **Meta Tags** | ✅ Complete | Open Graph, Twitter Card, canonical URLs | Social media ready |
 | **Hreflang** | ✅ Complete | Self-reference for Persian content | Multilingual support |
@@ -154,14 +153,11 @@ define('DISABLE_WP_CRON', true);  // Force system cron
 define('WP_CACHE', true);          // Force caching
 ```
 
-### 2. Redis Object Cache ✅
-```php
-// wp-config.php
-$redis_host = getenv('WP_REDIS_HOST') ?: '127.0.0.1';
-$redis_port = getenv('WP_REDIS_PORT') ?: 6379;
-// wp-content/object-cache.php (new file)
-class Bamero_Redis_Object_Cache implements WP_Object_Cache
-```
+### 2. Redis Object Cache (optional) ✅
+The repo ships no `object-cache.php` drop-in. When the host provides Redis,
+install the official **Redis Object Cache** plugin (wordpress.org/plugins/redis-cache);
+`wp-config.php` defines `WP_REDIS_HOST/PORT/TIMEOUT/PREFIX` from the environment
+only when the PHP `redis` extension is loaded.
 
 ### 3. System Cron Setup ✅
 ```bash
@@ -189,7 +185,7 @@ if (filter_var($cdn_enabled, FILTER_VALIDATE_BOOLEAN) && !empty($cdn_url)) {
 - [x] All mock data removed (bamero-woocommerce-setup plugin)
 - [x] All duplicate code removed (bamero_csp_nonce, bamero_security_headers)
 - [x] All non-production files removed (76 files)
-- [x] robots.txt created with SEO rules
+- [x] robots.txt served dynamically with SEO rules
 - [x] Security headers configured
 - [x] Rate limiting configured
 - [x] Payment gateway configured
@@ -288,8 +284,8 @@ export WP_SITEURL=https://yourdomain.com
 # Optional (Production)
 export WP_REDIS_HOST=127.0.0.1
 export WP_REDIS_PORT=6379
-export WP_REDIS_PASSWORD=your_redis_password
-export WP_REDIS_DB=0
+export WP_REDIS_TIMEOUT=1
+export WP_REDIS_PREFIX=wp_
 
 export CDN_ENABLED=true
 export CDN_URL=https://cdn.yourdomain.com
@@ -316,8 +312,8 @@ chmod +x cron-setup.sh
 # Install Redis
 sudo apt-get install redis-server php-redis
 
-# Enable Redis object cache
-# The wp-content/object-cache.php is already included
+# Enable Redis object cache: install + enable the "Redis Object Cache" plugin
+wp plugin install redis-cache --activate && wp redis enable
 
 # Restart PHP
 sudo systemctl restart php8.2-fpm  # or your PHP version
@@ -455,7 +451,7 @@ export CDN_URL=https://cdn.yourdomain.com
 - **Structured Data**: Organization, LocalBusiness, WebSite, Product, BreadcrumbList
 - **Meta Tags**: Open Graph, Twitter Card, canonical URLs
 - **Hreflang**: Self-reference for Persian content
-- **robots.txt**: Standard SEO rules with WordPress exclusions
+- **robots.txt**: Dynamic rules (theme) with the real home URL in the Sitemap line
 - **Geo Coordinates**: Customizer configurable (latitude/longitude)
 - **Local SEO**: Address, phone, map links configured
 - **Persian Texts**: All WooCommerce texts translated to Persian
@@ -582,7 +578,6 @@ graph TD
 | File | Purpose | Status |
 |------|---------|--------|
 | `cron-setup.sh` | System cron setup script | ✅ Committed |
-| `wp-content/object-cache.php` | Redis object cache implementation | ✅ Committed |
 
 ### Removed Files (76)
 | Category | Count | Status |

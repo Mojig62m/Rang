@@ -31,8 +31,6 @@ define('BAMERO_MOBILE_AUTH_MAX_ATTEMPTS', 3);   // max verification attempts per
 define('BAMERO_MOBILE_AUTH_LOCKOUT', 900);      // 15-minute lockout after repeated failed verifications
 define('BAMERO_MOBILE_AUTH_META_PHONE', 'bamero_verified_mobile');
 const BAMERO_NON_DIGIT_PATTERN = '/\D+/';
-const BAMERO_MOBILE_LABEL = 'شماره موبایل';
-const BAMERO_RATE_LIMITED_MSG = 'تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.';
 
 /**
  * Normalize Iranian mobile to 989xxxxxxxxx (digits only, country code 98).
@@ -42,7 +40,15 @@ const BAMERO_RATE_LIMITED_MSG = 'تعداد درخواست‌ها بیش از ح
  */
 function bamero_normalize_ir_mobile($raw)
 {
-    $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', (string) $raw);
+    // Persian (U+06F0..) and Arabic-Indic (U+0660..) digits are what Iranian
+    // visitors actually type; fold them to ASCII before stripping non-digits.
+    $raw = strtr((string) $raw, array(
+        '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+        '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+        '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+        '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+    ));
+    $digits = preg_replace(BAMERO_NON_DIGIT_PATTERN, '', $raw);
     if ($digits === '') {
         return false;
     }
@@ -135,14 +141,14 @@ function bamero_request_otp($phone_raw, $context = 'login')
     $lock_name = 'bamero_otp_rl_' . md5($phone);
     $got_lock  = (int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 2)', $lock_name));
     if (1 !== $got_lock) {
-        return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
+        return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
     }
 
     try {
         foreach (array($phone_key => BAMERO_MOBILE_AUTH_RATE_LIMIT, $ip_key => BAMERO_MOBILE_AUTH_RATE_LIMIT * 3, $global_key => 1000) as $rk => $limit) {
             $count = (int) get_transient($rk);
             if ($count >= $limit) {
-                return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
+                return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
             }
         }
         foreach (array($phone_key, $ip_key, $global_key) as $rk) {
@@ -209,7 +215,7 @@ function bamero_verify_otp($phone_raw, $otp_raw)
     $verify_lock = 'bamero_otp_vf_' . md5($phone);
     $got_lock = (int) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 2)', $verify_lock));
     if (1 !== $got_lock) {
-        return new WP_Error('rate_limited', __(BAMERO_RATE_LIMITED_MSG, 'bamero-mobile-auth'));
+        return new WP_Error('rate_limited', __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'));
     }
 
     try {
@@ -488,23 +494,35 @@ function bamero_mobile_auth_shortcode()
 
     $status = isset($_GET['bamero_auth']) ? sanitize_key(wp_unslash($_GET['bamero_auth'])) : '';
     $mobile_q = isset($_GET['mobile']) ? sanitize_text_field(wp_unslash($_GET['mobile'])) : '';
+    // Every code that bamero_request_otp() / bamero_handle_verify_otp() can
+    // put in ?bamero_auth= has a human-readable message; unknown codes fall
+    // back to a generic error so the visitor is never left without feedback.
+    $is_success = in_array($status, array('otp_sent', 'registered', 'logged_in'), true);
     $messages = array(
-        'otp_sent'       => __('کد تأیید ارسال شد.', 'bamero-mobile-auth'),
-        'otp_expired'    => __('کد منقضی شد.', 'bamero-mobile-auth'),
-        'otp_mismatch'   => __('کد اشتباه است.', 'bamero-mobile-auth'),
-        'invalid_mobile' => __('شماره موبایل نامعتبر است.', 'bamero-mobile-auth'),
-        'rate_limited'   => __('محدودیت تعداد پیامک.', 'bamero-mobile-auth'),
-        'not_registered' => __('این شماره ثبت نشده. ثبت‌نام کنید.', 'bamero-mobile-auth'),
-        'exists'         => __('قبلاً ثبت‌نام کرده‌اید. وارد شوید.', 'bamero-mobile-auth'),
-        'name_required'  => __('نام و نام خانوادگی الزامی است.', 'bamero-mobile-auth'),
-        'bamero_sms_not_configured' => __('ارسال پیامک هنوز پیکربندی نشده (پیش‌نیاز خارجی).', 'bamero-mobile-auth'),
+        'otp_sent'            => __('کد تأیید ارسال شد.', 'bamero-mobile-auth'),
+        'registered'          => __('ثبت‌نام با موفقیت انجام شد. خوش آمدید.', 'bamero-mobile-auth'),
+        'logged_in'           => __('با موفقیت وارد شدید.', 'bamero-mobile-auth'),
+        'otp_expired'         => __('کد منقضی شد. کد جدید درخواست کنید.', 'bamero-mobile-auth'),
+        'otp_mismatch'        => __('کد اشتباه است.', 'bamero-mobile-auth'),
+        'auth_schema_invalid' => __('اطلاعات واردشده نامعتبر است. شماره و کد را بررسی کنید.', 'bamero-mobile-auth'),
+        'rate_limited'        => __('تعداد درخواست‌ها بیش از حد مجاز است. بعداً تلاش کنید.', 'bamero-mobile-auth'),
+        'locked'              => __('به دلیل تلاش‌های ناموفق، ورود موقتاً قفل شده است. ۱۵ دقیقه بعد دوباره تلاش کنید.', 'bamero-mobile-auth'),
+        'not_registered'      => __('این شماره ثبت نشده. ثبت‌نام کنید.', 'bamero-mobile-auth'),
+        'exists'              => __('قبلاً ثبت‌نام کرده‌اید. وارد شوید.', 'bamero-mobile-auth'),
+        'name_required'       => __('نام و نام خانوادگی الزامی است.', 'bamero-mobile-auth'),
+        'context_mismatch'    => __('کد ارسال‌شده برای این عملیات نیست. دوباره کد درخواست کنید.', 'bamero-mobile-auth'),
+        'not_allowed'         => __('ورود با پیامک برای این حساب مجاز نیست. از ورود مدیریت استفاده کنید.', 'bamero-mobile-auth'),
+        'sms_queue_unavailable' => __('سامانهٔ پیامک موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.', 'bamero-mobile-auth'),
     );
+    $generic_error = __('خطایی رخ داد. لطفاً دوباره تلاش کنید.', 'bamero-mobile-auth');
 
     ob_start();
     ?>
     <div class="bamero-mobile-auth" id="bamero-mobile-auth">
-        <?php if ($status && isset($messages[$status])) : ?>
-            <div class="woocommerce-info" role="status"><?php echo esc_html($messages[$status]); ?></div>
+        <?php if ($status !== '') : ?>
+            <div class="<?php echo $is_success ? 'woocommerce-message' : 'woocommerce-error'; ?>" role="<?php echo $is_success ? 'status' : 'alert'; ?>">
+                <?php echo esc_html(isset($messages[$status]) ? $messages[$status] : $generic_error); ?>
+            </div>
         <?php endif; ?>
 
         <div class="bamero-auth-tabs">
@@ -519,7 +537,7 @@ function bamero_mobile_auth_shortcode()
                 <input type="hidden" name="action" value="bamero_request_otp">
                 <input type="hidden" name="context" value="login">
                 <p>
-                    <label for="bamero-login-mobile"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-login-mobile"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-login-mobile" name="mobile" required
                            inputmode="numeric" autocomplete="tel"
                            placeholder="09123456789"
@@ -532,7 +550,7 @@ function bamero_mobile_auth_shortcode()
                 <input type="hidden" name="action" value="bamero_verify_otp">
                 <input type="hidden" name="context" value="login">
                 <p>
-                    <label for="bamero-login-mobile2"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-login-mobile2"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-login-mobile2" name="mobile" required value="<?php echo esc_attr($mobile_q); ?>">
                 </p>
                 <p>
@@ -551,7 +569,7 @@ function bamero_mobile_auth_shortcode()
                 <input type="hidden" name="action" value="bamero_request_otp">
                 <input type="hidden" name="context" value="register">
                 <p>
-                    <label for="bamero-reg-mobile"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-reg-mobile"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-reg-mobile" name="mobile" required inputmode="numeric" autocomplete="tel" placeholder="09123456789">
                 </p>
                 <button type="submit" class="button"><?php echo esc_html__('دریافت کد تأیید', 'bamero-mobile-auth'); ?></button>
@@ -561,7 +579,7 @@ function bamero_mobile_auth_shortcode()
                 <input type="hidden" name="action" value="bamero_verify_otp">
                 <input type="hidden" name="context" value="register">
                 <p>
-                    <label for="bamero-reg-mobile2"><?php echo esc_html__(BAMERO_MOBILE_LABEL, 'bamero-mobile-auth'); ?></label>
+                    <label for="bamero-reg-mobile2"><?php echo esc_html__('شماره موبایل', 'bamero-mobile-auth'); ?></label>
                     <input type="tel" id="bamero-reg-mobile2" name="mobile" required>
                 </p>
                 <p>
@@ -657,15 +675,11 @@ function bamero_disable_password_reset()
         }
         return $allow;
     }, 10, 2);
-    add_filter('lostpassword_url', '__return_empty_string');
-
-    // Block wp-login.php reset actions (lostpassword / rp / resetpass).
-    add_action('login_init', function () {
-        $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
-        if (in_array($action, array('lostpassword', 'rp', 'resetpass'), true)) {
-            wp_safe_redirect(home_url('/'));
-            exit;
-        }
+    // Hide the "lost password" link on storefront forms only; wp-login.php
+    // keeps its link so administrators can still recover their password
+    // (retrieve_password() itself enforces allow_password_reset above).
+    add_filter('lostpassword_url', function ($url) {
+        return (function_exists('is_account_page') && is_account_page()) ? '' : $url;
     });
 
     // Block the WooCommerce lost-password endpoint.

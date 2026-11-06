@@ -3,7 +3,9 @@
     <description>PSR-12 with WordPress naming (hook callbacks, global classes) allowed.</description>
     <rule ref="PSR12"/>
     <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace"><severity>0</severity></rule>
+    <!-- phpcs 3.x reports NotCamelCaps, phpcs 4.x reports NotPascalCase for the same check -->
     <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps"><severity>0</severity></rule>
+    <rule ref="Squiz.Classes.ValidClassName.NotPascalCase"><severity>0</severity></rule>
     <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps"><severity>0</severity></rule>
     <exclude-pattern>*/.git/*</exclude-pattern>
 </ruleset>

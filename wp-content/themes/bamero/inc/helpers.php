@@ -86,6 +86,18 @@ function bamero_address_display()
 /** Default WhatsApp deep link derived from the configured phone number. */
 function bamero_whatsapp_default()
 {
-    $digits = preg_replace('/\D+/', '', bamero_ascii_digits(bamero_phone_display()));
-    return $digits === '' ? '' : 'https://wa.me/' . $digits;
+    // wa.me requires the international number without "+" or leading zeros
+    // (https://faq.whatsapp.com/5913398998672934): 0913… → 98913…
+    $e164 = bamero_phone_e164();
+    return $e164 === '' ? '' : 'https://wa.me/' . ltrim($e164, '+');
+}
+
+/**
+ * Store owner's mobile in the normalised 98… form used by the SMS outbox
+ * ('' when the configured phone is not an Iranian mobile number).
+ */
+function bamero_owner_mobile()
+{
+    $e164 = bamero_phone_e164(); // +98913… for 0913…, 913… and 98913… inputs
+    return preg_match('/^\+989\d{9}$/', $e164) ? substr($e164, 1) : '';
 }
