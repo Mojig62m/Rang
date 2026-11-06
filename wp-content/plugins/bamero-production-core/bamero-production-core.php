@@ -619,22 +619,59 @@ add_action('woocommerce_order_status_changed', 'bamero_queue_order_sms', 20, 4);
 // store owner's own notifications (admin_email) and staff account mail
 // (password recovery for shop managers / administrators, who are excluded
 // from OTP-only login) alive. Everything else is refused at the boundary.
+/**
+ * True when ONE e-mail address may receive platform mail: the store owner's
+ * admin_email, or a staff account (manage_woocommerce) — e.g. password
+ * recovery for administrators / shop managers who are excluded from OTP login.
+ */
+function bamero_mail_recipient_allowed($address)
+{
+    $address = strtolower(trim((string) $address));
+    if ('' === $address || !is_email($address)) {
+        return false;
+    }
+    if ($address === strtolower(trim((string) get_option('admin_email')))) {
+        return true;
+    }
+    $user = get_user_by('email', $address);
+    return $user && user_can($user, 'manage_woocommerce');
+}
+
+/** Split "A <a@x>, b@y" strings / arrays into bare addresses. */
+function bamero_mail_addresses($value)
+{
+    $items = is_array($value) ? $value : explode(',', (string) $value);
+    $out = array();
+    foreach ($items as $item) {
+        $item = trim((string) $item);
+        if ('' === $item) {
+            continue;
+        }
+        $out[] = preg_match('/<([^>]+)>/', $item, $m) ? trim($m[1]) : $item;
+    }
+    return $out;
+}
+
 add_filter('pre_wp_' . 'mail', function ($null, $atts) {
-    $admin_email = (string) get_option('admin_email');
-    $to = isset($atts['to']) ? (is_array($atts['to']) ? implode(',', $atts['to']) : (string) $atts['to']) : '';
-    if ('' !== $admin_email && '' !== $to && false !== stripos($to, $admin_email)) {
-        bamero_log_event('mail_allowed', array('reason' => 'admin_notification'));
-        return null; // fall through to normal wp_mail()
+    $recipients = bamero_mail_addresses(isset($atts['to']) ? $atts['to'] : '');
+    $headers = isset($atts['headers']) ? (is_array($atts['headers']) ? $atts['headers'] : explode("\n", (string) $atts['headers'])) : array();
+    foreach ($headers as $header) {
+        if (preg_match('/^\s*(cc|bcc)\s*:\s*(.+)$/i', (string) $header, $m)) {
+            $recipients = array_merge($recipients, bamero_mail_addresses($m[2]));
+        }
     }
-    // "Name <addr>" or a bare address: resolve the account behind it.
-    $address = preg_match('/<([^>]+)>/', $to, $m) ? $m[1] : trim($to);
-    $user = is_email($address) ? get_user_by('email', $address) : false;
-    if ($user && user_can($user, 'manage_woocommerce')) {
-        bamero_log_event('mail_allowed', array('reason' => 'staff_notification'));
-        return null;
+    if (!$recipients) {
+        bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
+        return false;
     }
-    bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
-    return false;
+    foreach ($recipients as $address) {
+        if (!bamero_mail_recipient_allowed($address)) {
+            bamero_log_event('mail_blocked', array('reason' => 'mobile_only_policy'));
+            return false;
+        }
+    }
+    bamero_log_event('mail_allowed', array('reason' => 'owner_or_staff_notification'));
+    return null; // fall through to normal wp_mail()
 }, 10, 2);
 
 /** Register Iranian currencies (IRR primary, IRT legacy) as first-class WooCommerce currencies with proper symbols. */
